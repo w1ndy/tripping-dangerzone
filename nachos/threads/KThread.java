@@ -190,6 +190,9 @@ public class KThread {
         Lib.assertTrue(toBeDestroyed == null);
         toBeDestroyed = currentThread;
 
+        currentThread.joinLock.acquire();
+        currentThread.joinCondition.wakeAll();
+        currentThread.joinLock.release();
 
         currentThread.status = statusFinished;
 
@@ -276,6 +279,9 @@ public class KThread {
 
         Lib.assertTrue(this != currentThread);
 
+        joinLock.acquire();
+        joinCondition.sleep();
+        joinLock.release();
     }
 
     /**
@@ -398,14 +404,29 @@ public class KThread {
         private int which;
     }
 
+    private static class JoinTest implements Runnable {
+        public void run() {
+            for(int i = 0; i < 5; i++) {
+                System.out.println("*** thread 0 looped " + i + " times");
+                if(i == 2) {
+                    KThread t = new KThread(new PingTest(1));
+                    t.fork();
+                    t.join();
+                }
+                currentThread.yield();
+            }
+        }
+    }
+
     /**
      * Tests whether this module is working.
      */
     public static void selfTest() {
         Lib.debug(dbgThread, "Enter KThread.selfTest");
 
-        new KThread(new PingTest(1)).setName("forked thread").fork();
-        new PingTest(0).run();
+        new JoinTest().run();
+        //new KThread(new PingTest(1)).setName("forked thread").fork();
+        //new PingTest(0).run();
     }
 
     private static final char dbgThread = 't';
@@ -432,6 +453,9 @@ public class KThread {
     private String name = "(unnamed thread)";
     private Runnable target;
     private TCB tcb;
+
+    public Lock joinLock = new Lock();
+    public Condition joinCondition = new Condition(joinLock);
 
     /**
      * Unique identifer for this thread. Used to deterministically compare
