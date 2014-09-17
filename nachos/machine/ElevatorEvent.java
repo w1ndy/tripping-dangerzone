@@ -7,18 +7,18 @@ package nachos.machine;
  */
 public final class ElevatorEvent {
     public ElevatorEvent(int event, int floor, int elevator) {
-	this.event = event;
-	this.floor = floor;
-	this.elevator = elevator;
+        this.event = event;
+        this.floor = floor;
+        this.elevator = elevator;
     }
-    
+
     /** The event identifier. Refer to the <i>event*</i> constants. */
     public final int event;
     /** The floor pertaining to the event, or -1 if not applicable. */
     public final int floor;
     /** The elevator pertaining to the event, or -1 if not applicable. */
     public final int elevator;
-    
+
     /** An up button was pressed. */
     public static final int eventUpButtonPressed = 0;
     /** A down button was pressed. */

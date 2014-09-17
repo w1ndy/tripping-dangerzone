@@ -49,7 +49,7 @@ public abstract class Privilege {
      */
     public Privilege() {
     }
-    
+
     /**
      * Perform the specified action with privilege.
      *
@@ -72,7 +72,7 @@ public abstract class Privilege {
      * @return	the return value of the action.
      */
     public abstract Object doPrivileged(PrivilegedExceptionAction action)
-	throws PrivilegedActionException;
+    throws PrivilegedActionException;
 
     /**
      * Exit Nachos with the specified status.
@@ -88,7 +88,7 @@ public abstract class Privilege {
      * @param	handler	the notification handler.
      */
     public void addExitNotificationHandler(Runnable handler) {
-	exitNotificationHandlers.add(handler);
+        exitNotificationHandlers.add(handler);
     }
 
     /**
@@ -96,17 +96,16 @@ public abstract class Privilege {
      * <tt>addExitNotificationHandler()</tt>. Called by <tt>exit()</tt>.
      */
     protected void invokeExitNotificationHandlers() {
-	for (Iterator i=exitNotificationHandlers.iterator(); i.hasNext(); ) {
-	    try {
-		((Runnable) i.next()).run();
-	    }
-	    catch (Throwable e) {
-		System.out.println("exit() notification handler failed");
-	    }
-	}
+        for (Iterator i=exitNotificationHandlers.iterator(); i.hasNext(); ) {
+            try {
+                ((Runnable) i.next()).run();
+            } catch (Throwable e) {
+                System.out.println("exit() notification handler failed");
+            }
+        }
     }
 
-    private LinkedList<Runnable> exitNotificationHandlers = 
+    private LinkedList<Runnable> exitNotificationHandlers =
         new LinkedList<Runnable>();
 
     /** Nachos runtime statistics. */
@@ -126,12 +125,12 @@ public abstract class Privilege {
      * methods.
      */
     public interface MachinePrivilege {
-	/**
-	 * Install a hardware console.
-	 *
-	 * @param	console	the new hardware console.
-	 */
-	public void setConsole(SerialConsole console);
+        /**
+         * Install a hardware console.
+         *
+         * @param	console	the new hardware console.
+         */
+        public void setConsole(SerialConsole console);
     }
 
     /**
@@ -139,25 +138,25 @@ public abstract class Privilege {
      * methods.
      */
     public interface InterruptPrivilege {
-	/**
-	 * Schedule an interrupt to occur at some time in the future.
-	 *
-	 * @param	when	the number of ticks until the interrupt should
-	 *			occur.
-	 * @param	type	a name for the type of interrupt being
-	 *			scheduled.
-	 * @param	handler	the interrupt handler to call.
-	 */
-	public void schedule(long when, String type, Runnable handler);
-	
-	/**
-	 * Advance the simulated time.
-	 *
-	 * @param inKernelMode	<tt>true</tt> if the current thread is running kernel
-	 *		code, <tt>false</tt> if the current thread is running
-	 *		MIPS user code.
-	 */
-	public void tick(boolean inKernelMode);
+        /**
+         * Schedule an interrupt to occur at some time in the future.
+         *
+         * @param	when	the number of ticks until the interrupt should
+         *			occur.
+         * @param	type	a name for the type of interrupt being
+         *			scheduled.
+         * @param	handler	the interrupt handler to call.
+         */
+        public void schedule(long when, String type, Runnable handler);
+
+        /**
+         * Advance the simulated time.
+         *
+         * @param inKernelMode	<tt>true</tt> if the current thread is running kernel
+         *		code, <tt>false</tt> if the current thread is running
+         *		MIPS user code.
+         */
+        public void tick(boolean inKernelMode);
     }
 
     /**
@@ -165,31 +164,31 @@ public abstract class Privilege {
      * methods.
      */
     public interface ProcessorPrivilege {
-	/**
-	 * Flush the processor pipeline in preparation for switching to kernel
-	 * mode.
-	 */
-	public void flushPipe();
+        /**
+         * Flush the processor pipeline in preparation for switching to kernel
+         * mode.
+         */
+        public void flushPipe();
     }
 
     /**
      * An interface that provides access to some private <tt>TCB</tt> methods.
      */
     public interface TCBPrivilege {
-	/**
-	 * Associate the current TCB with the specified <tt>KThread</tt>.
-	 * <tt>AutoGrader.runningThread()</tt> <i>must</i> call this method
-	 * before returning.
-	 *
-	 * @param	thread	the current thread.
-	 */
-	public void associateThread(KThread thread);
-	/**
-	 * Authorize the TCB associated with the specified thread to be
-	 * destroyed.
-	 *
-	 * @param	thread	the thread whose TCB is about to be destroyed.
-	 */
-	public void authorizeDestroy(KThread thread);
-    }    
+        /**
+         * Associate the current TCB with the specified <tt>KThread</tt>.
+         * <tt>AutoGrader.runningThread()</tt> <i>must</i> call this method
+         * before returning.
+         *
+         * @param	thread	the current thread.
+         */
+        public void associateThread(KThread thread);
+        /**
+         * Authorize the TCB associated with the specified thread to be
+         * destroyed.
+         *
+         * @param	thread	the thread whose TCB is about to be destroyed.
+         */
+        public void authorizeDestroy(KThread thread);
+    }
 }

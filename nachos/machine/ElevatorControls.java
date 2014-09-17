@@ -32,7 +32,7 @@ public interface ElevatorControls {
      * @param	handler	the elevator interrupt handler.
      */
     public void setInterruptHandler(Runnable handler);
-	
+
     /**
      * Open an elevator's doors.
      *

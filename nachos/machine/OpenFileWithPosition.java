@@ -14,7 +14,7 @@ public abstract class OpenFileWithPosition extends OpenFile {
      * @param	name		the name of the file, on that file system.
      */
     public OpenFileWithPosition(FileSystem fileSystem, String name) {
-	super(fileSystem, name);
+        super(fileSystem, name);
     }
 
     /**
@@ -22,33 +22,33 @@ public abstract class OpenFileWithPosition extends OpenFile {
      * associated with any file system.
      */
     public OpenFileWithPosition() {
-	super();
+        super();
     }
 
     public void seek(int position) {
-	this.position = position;
+        this.position = position;
     }
 
     public int tell() {
-	return position;
+        return position;
     }
 
     public int read(byte[] buf, int offset, int length) {
-	int amount = read(position, buf, offset, length);
-	if (amount == -1)
-	    return -1;
-	
-	position += amount;
-	return amount;
+        int amount = read(position, buf, offset, length);
+        if (amount == -1)
+            return -1;
+
+        position += amount;
+        return amount;
     }
 
     public int write(byte[] buf, int offset, int length) {
-	int amount = write(position, buf, offset, length);
-	if (amount == -1)
-	    return -1;
-	
-	position += amount;
-	return amount;
+        int amount = write(position, buf, offset, length);
+        if (amount == -1)
+            return -1;
+
+        position += amount;
+        return amount;
     }
 
     /**

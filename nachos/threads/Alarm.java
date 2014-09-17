@@ -15,9 +15,11 @@ public class Alarm {
      * alarm.
      */
     public Alarm() {
-	Machine.timer().setInterruptHandler(new Runnable() {
-		public void run() { timerInterrupt(); }
-	    });
+        Machine.timer().setInterruptHandler(new Runnable() {
+            public void run() {
+                timerInterrupt();
+            }
+        });
     }
 
     /**
@@ -27,7 +29,7 @@ public class Alarm {
      * that should be run.
      */
     public void timerInterrupt() {
-	KThread.currentThread().yield();
+        KThread.currentThread().yield();
     }
 
     /**
@@ -45,9 +47,9 @@ public class Alarm {
      * @see	nachos.machine.Timer#getTime()
      */
     public void waitUntil(long x) {
-	// for now, cheat just to get something working (busy waiting is bad)
-	long wakeTime = Machine.timer().getTime() + x;
-	while (wakeTime > Machine.timer().getTime())
-	    KThread.yield();
+        // for now, cheat just to get something working (busy waiting is bad)
+        long wakeTime = Machine.timer().getTime() + x;
+        while (wakeTime > Machine.timer().getTime())
+            KThread.yield();
     }
 }

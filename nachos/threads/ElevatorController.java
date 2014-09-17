@@ -12,7 +12,7 @@ public class ElevatorController implements ElevatorControllerInterface {
      */
     public ElevatorController() {
     }
-    
+
     /**
      * Initialize this elevator controller. The controller will access the
      * elevator bank through <i>controls</i>. This constructor should return

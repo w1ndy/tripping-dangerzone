@@ -22,22 +22,24 @@ public final class Timer {
      *				machine.
      */
     public Timer(Privilege privilege) {
-	System.out.print(" timer");
-	
-	this.privilege = privilege;
-	
-	timerInterrupt = new Runnable() {
-		public void run() { timerInterrupt(); }
-	    };
-	
-	autoGraderInterrupt = new Runnable() {
-		public void run() {
-		    Machine.autoGrader().timerInterrupt(Timer.this.privilege,
-							lastTimerInterrupt);
-		}
-	    };
+        System.out.print(" timer");
 
-	scheduleInterrupt();
+        this.privilege = privilege;
+
+        timerInterrupt = new Runnable() {
+            public void run() {
+                timerInterrupt();
+            }
+        };
+
+        autoGraderInterrupt = new Runnable() {
+            public void run() {
+                Machine.autoGrader().timerInterrupt(Timer.this.privilege,
+                                                    lastTimerInterrupt);
+            }
+        };
+
+        scheduleInterrupt();
     }
 
     /**
@@ -47,7 +49,7 @@ public final class Timer {
      * @param	handler		the timer interrupt handler.
      */
     public void setInterruptHandler(Runnable handler) {
-	this.handler = handler;
+        this.handler = handler;
     }
 
     /**
@@ -56,28 +58,28 @@ public final class Timer {
      * @return	the number of clock ticks since Nachos started.
      */
     public long getTime() {
-	return privilege.stats.totalTicks;
+        return privilege.stats.totalTicks;
     }
 
     private void timerInterrupt() {
-	scheduleInterrupt();
-	scheduleAutoGraderInterrupt();
+        scheduleInterrupt();
+        scheduleAutoGraderInterrupt();
 
-	lastTimerInterrupt = getTime();
+        lastTimerInterrupt = getTime();
 
-	if (handler != null)
-	    handler.run();
+        if (handler != null)
+            handler.run();
     }
 
     private void scheduleInterrupt() {
-	int delay = Stats.TimerTicks;
-	delay += Lib.random(delay/10) - (delay/20);
+        int delay = Stats.TimerTicks;
+        delay += Lib.random(delay/10) - (delay/20);
 
-	privilege.interrupt.schedule(delay, "timer", timerInterrupt);
+        privilege.interrupt.schedule(delay, "timer", timerInterrupt);
     }
 
     private void scheduleAutoGraderInterrupt() {
-	privilege.interrupt.schedule(1, "timerAG", autoGraderInterrupt);
+        privilege.interrupt.schedule(1, "timerAG", autoGraderInterrupt);
     }
 
     private long lastTimerInterrupt;

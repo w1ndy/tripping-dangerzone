@@ -13,13 +13,13 @@ public class NetProcess extends VMProcess {
      * Allocate a new process.
      */
     public NetProcess() {
-	super();
+        super();
     }
 
     private static final int
-	syscallConnect = 11,
-	syscallAccept = 12;
-    
+    syscallConnect = 11,
+    syscallAccept = 12;
+
     /**
      * Handle a syscall exception. Called by <tt>handleException()</tt>. The
      * <i>syscall</i> argument identifies which syscall the user executed:
@@ -29,7 +29,7 @@ public class NetProcess extends VMProcess {
      * <tr><td>11</td><td><tt>int  connect(int host, int port);</tt></td></tr>
      * <tr><td>12</td><td><tt>int  accept(int port);</tt></td></tr>
      * </table>
-     * 
+     *
      * @param	syscall	the syscall number.
      * @param	a0	the first syscall argument.
      * @param	a1	the second syscall argument.
@@ -38,9 +38,9 @@ public class NetProcess extends VMProcess {
      * @return	the value to be returned to the user.
      */
     public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
-	switch (syscall) {
-	default:
-	    return super.handleSyscall(syscall, a0, a1, a2, a3);
-	}
+        switch (syscall) {
+        default:
+            return super.handleSyscall(syscall, a0, a1, a2, a3);
+        }
     }
 }

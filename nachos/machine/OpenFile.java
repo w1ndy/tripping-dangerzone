@@ -16,8 +16,8 @@ public class OpenFile {
      * @param	name		the name of the file, on that file system.
      */
     public OpenFile(FileSystem fileSystem, String name) {
-	this.fileSystem = fileSystem;
-	this.name = name;
+        this.fileSystem = fileSystem;
+        this.name = name;
     }
 
     /**
@@ -25,7 +25,7 @@ public class OpenFile {
      * file system.
      */
     public OpenFile() {
-	this(null, "unnamed");
+        this(null, "unnamed");
     }
 
     /**
@@ -34,18 +34,18 @@ public class OpenFile {
      * @return	the file system to which this file belongs.
      */
     public FileSystem getFileSystem() {
-	return fileSystem;
+        return fileSystem;
     }
-    
+
     /**
      * Get the name of this open file.
      *
      * @return	the name of this open file.
      */
     public String getName() {
-	return name;
+        return name;
     }
-    
+
     /**
      * Read this file starting at the specified position and return the number
      * of bytes successfully read. If no bytes were read because of a fatal
@@ -56,11 +56,11 @@ public class OpenFile {
      * @param	offset	the offset in the buffer to start storing bytes.
      * @param	length	the number of bytes to read.
      * @return	the actual number of bytes successfully read, or -1 on failure.
-     */    
+     */
     public int read(int pos, byte[] buf, int offset, int length) {
-	return -1;
+        return -1;
     }
-    
+
     /**
      * Write this file starting at the specified position and return the number
      * of bytes successfully written. If no bytes were written because of a
@@ -72,9 +72,9 @@ public class OpenFile {
      * @param	length	the number of bytes to write.
      * @return	the actual number of bytes successfully written, or -1 on
      *		failure.
-     */    
+     */
     public int write(int pos, byte[] buf, int offset, int length) {
-	return -1;
+        return -1;
     }
 
     /**
@@ -83,7 +83,7 @@ public class OpenFile {
      * @return	the length of this file, or -1 if this file has no length.
      */
     public int length() {
-	return -1;
+        return -1;
     }
 
     /**
@@ -103,7 +103,7 @@ public class OpenFile {
      * pointer.
      */
     public int tell() {
-	return -1;
+        return -1;
     }
 
     /**
@@ -115,9 +115,9 @@ public class OpenFile {
      * @param	offset	the offset in the buffer to start storing bytes.
      * @param	length	the number of bytes to read.
      * @return	the actual number of bytes successfully read, or -1 on failure.
-     */    
+     */
     public int read(byte[] buf, int offset, int length) {
-	return -1;
+        return -1;
     }
 
     /**
@@ -131,9 +131,9 @@ public class OpenFile {
      * @param	length	the number of bytes to write.
      * @return	the actual number of bytes successfully written, or -1 on
      *		failure.
-     */    
+     */
     public int write(byte[] buf, int offset, int length) {
-	return -1;
+        return -1;
     }
 
     private FileSystem fileSystem;

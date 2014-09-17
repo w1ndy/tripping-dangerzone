@@ -59,9 +59,9 @@ public class Condition {
      *				<tt>wake()</tt>, or <tt>wakeAll()</tt>.
      */
     public Condition(Lock conditionLock) {
-	this.conditionLock = conditionLock;
+        this.conditionLock = conditionLock;
 
-	waitQueue = new LinkedList<Semaphore>();
+        waitQueue = new LinkedList<Semaphore>();
     }
 
     /**
@@ -77,14 +77,14 @@ public class Condition {
      * though the lock is released before caling <tt>P()</tt>.
      */
     public void sleep() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+        Lib.assertTrue(conditionLock.isHeldByCurrentThread());
 
-	Semaphore waiter = new Semaphore(0);
-	waitQueue.add(waiter);
+        Semaphore waiter = new Semaphore(0);
+        waitQueue.add(waiter);
 
-	conditionLock.release();
-	waiter.P();
-	conditionLock.acquire();	
+        conditionLock.release();
+        waiter.P();
+        conditionLock.acquire();
     }
 
     /**
@@ -92,10 +92,10 @@ public class Condition {
      * current thread must hold the associated lock.
      */
     public void wake() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+        Lib.assertTrue(conditionLock.isHeldByCurrentThread());
 
-	if (!waitQueue.isEmpty())
-	    ((Semaphore) waitQueue.removeFirst()).V();
+        if (!waitQueue.isEmpty())
+            ((Semaphore) waitQueue.removeFirst()).V();
     }
 
     /**
@@ -103,10 +103,10 @@ public class Condition {
      * thread must hold the associated lock.
      */
     public void wakeAll() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+        Lib.assertTrue(conditionLock.isHeldByCurrentThread());
 
-	while (!waitQueue.isEmpty())
-	    wake();
+        while (!waitQueue.isEmpty())
+            wake();
     }
 
     private Lock conditionLock;

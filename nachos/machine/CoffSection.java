@@ -22,18 +22,18 @@ public class CoffSection {
      * @param	firstVPN	the first virtual page number used by this.
      */
     protected CoffSection(Coff coff, String name, boolean executable,
-			  boolean readOnly, int numPages, int firstVPN) {
-	this.coff = coff;
-	this.name = name;
-	this.executable = executable;
-	this.readOnly = readOnly;
-	this.numPages = numPages;
-	this.firstVPN = firstVPN;
+                          boolean readOnly, int numPages, int firstVPN) {
+        this.coff = coff;
+        this.name = name;
+        this.executable = executable;
+        this.readOnly = readOnly;
+        this.numPages = numPages;
+        this.firstVPN = firstVPN;
 
-	file = null;
-	size = 0;
-	contentOffset = 0;
-	initialized = true;
+        file = null;
+        size = 0;
+        contentOffset = 0;
+        initialized = true;
     }
 
     /**
@@ -46,68 +46,68 @@ public class CoffSection {
      * @exception	EOFException	if an error occurs.
      */
     public CoffSection(OpenFile file, Coff coff,
-		       int headerOffset) throws EOFException {
-	this.file = file;
-	this.coff = coff;
+                       int headerOffset) throws EOFException {
+        this.file = file;
+        this.coff = coff;
 
-	Lib.assertTrue(headerOffset >= 0);
-	if (headerOffset+headerLength > file.length()) {
-	    Lib.debug(dbgCoffSection, "\tsection header truncated");
-	    throw new EOFException();
-	}
+        Lib.assertTrue(headerOffset >= 0);
+        if (headerOffset+headerLength > file.length()) {
+            Lib.debug(dbgCoffSection, "\tsection header truncated");
+            throw new EOFException();
+        }
 
-	byte[] buf = new byte[headerLength];
-	Lib.strictReadFile(file, headerOffset, buf, 0, headerLength);
+        byte[] buf = new byte[headerLength];
+        Lib.strictReadFile(file, headerOffset, buf, 0, headerLength);
 
-	name = Lib.bytesToString(buf, 0, 8);
-	int vaddr = Lib.bytesToInt(buf, 12);
-	size = Lib.bytesToInt(buf, 16);
-	contentOffset = Lib.bytesToInt(buf, 20);
-	int numRelocations = Lib.bytesToUnsignedShort(buf, 32);
-	int flags = Lib.bytesToInt(buf, 36);
+        name = Lib.bytesToString(buf, 0, 8);
+        int vaddr = Lib.bytesToInt(buf, 12);
+        size = Lib.bytesToInt(buf, 16);
+        contentOffset = Lib.bytesToInt(buf, 20);
+        int numRelocations = Lib.bytesToUnsignedShort(buf, 32);
+        int flags = Lib.bytesToInt(buf, 36);
 
-	if (numRelocations != 0) {
-	    Lib.debug(dbgCoffSection, "\tsection needs relocation");
-	    throw new EOFException();
-	}
+        if (numRelocations != 0) {
+            Lib.debug(dbgCoffSection, "\tsection needs relocation");
+            throw new EOFException();
+        }
 
-	switch (flags & 0x0FFF) {
-	case 0x0020:
-	    executable = true;
-	    readOnly = true;
-	    initialized = true;
-	    break;
-	case 0x0040:
-	    executable = false;
-	    readOnly = false;
-	    initialized = true;
-	    break;
-	case 0x0080:
-	    executable = false;
-	    readOnly = false;
-	    initialized = false;
-	    break;
-	case 0x0100:
-	    executable = false;
-	    readOnly = true;
-	    initialized = true;
-	    break;
-	default:
-	    Lib.debug(dbgCoffSection, "\tinvalid section flags: " + flags);
-	    throw new EOFException();
-	}
+        switch (flags & 0x0FFF) {
+        case 0x0020:
+            executable = true;
+            readOnly = true;
+            initialized = true;
+            break;
+        case 0x0040:
+            executable = false;
+            readOnly = false;
+            initialized = true;
+            break;
+        case 0x0080:
+            executable = false;
+            readOnly = false;
+            initialized = false;
+            break;
+        case 0x0100:
+            executable = false;
+            readOnly = true;
+            initialized = true;
+            break;
+        default:
+            Lib.debug(dbgCoffSection, "\tinvalid section flags: " + flags);
+            throw new EOFException();
+        }
 
-	if (vaddr%Processor.pageSize != 0 || size < 0 ||
-	    initialized && (contentOffset < 0 ||
-			    contentOffset+size > file.length())) {
-	    Lib.debug(dbgCoffSection, "\tinvalid section addresses: " +
-		      "vaddr=" + vaddr + " size=" + size +
-		      " contentOffset=" + contentOffset);
-	    throw new EOFException();
-	}
+        if (vaddr%Processor.pageSize != 0 || size < 0 ||
+                initialized && (contentOffset < 0 ||
+                                contentOffset+size > file.length())) {
+            Lib.debug(dbgCoffSection, "\tinvalid section addresses: " +
+                      "vaddr=" + vaddr + " size=" + size +
+                      " contentOffset=" + contentOffset);
+            throw new EOFException();
+        }
 
-	numPages = Lib.divRoundUp(size, Processor.pageSize);
-	firstVPN = vaddr / Processor.pageSize;
+        numPages = Lib.divRoundUp(size, Processor.pageSize);
+        firstVPN = vaddr / Processor.pageSize;
     }
 
     /**
@@ -116,7 +116,7 @@ public class CoffSection {
      * @return	the COFF object corresponding to this section.
      */
     public Coff getCoff() {
-	return coff;
+        return coff;
     }
 
     /**
@@ -125,7 +125,7 @@ public class CoffSection {
      * @return	the name of this section.
      */
     public String getName() {
-	return name;
+        return name;
     }
 
     /**
@@ -134,7 +134,7 @@ public class CoffSection {
      * @return	<tt>true</tt> if this section should never be written.
      */
     public boolean isReadOnly() {
-	return readOnly;
+        return readOnly;
     }
 
     /**
@@ -146,7 +146,7 @@ public class CoffSection {
      *		executable.
      */
     public boolean isInitialzed() {
-	return initialized;
+        return initialized;
     }
 
     /**
@@ -155,7 +155,7 @@ public class CoffSection {
      * @return	the number of pages in this section.
      */
     public int getLength() {
-	return numPages;
+        return numPages;
     }
 
     /**
@@ -164,7 +164,7 @@ public class CoffSection {
      * @return	the first virtual page number used by this section.
      */
     public int getFirstVPN() {
-	return firstVPN;
+        return firstVPN;
     }
 
     /**
@@ -174,32 +174,32 @@ public class CoffSection {
      * @param	ppn	the physical page to load into.
      */
     public void loadPage(int spn, int ppn) {
-	Lib.assertTrue(file != null);
+        Lib.assertTrue(file != null);
 
-	Lib.assertTrue(spn>=0 && spn<numPages);
-	Lib.assertTrue(ppn>=0 && ppn<Machine.processor().getNumPhysPages());
+        Lib.assertTrue(spn>=0 && spn<numPages);
+        Lib.assertTrue(ppn>=0 && ppn<Machine.processor().getNumPhysPages());
 
-	int pageSize = Processor.pageSize;
-	byte[] memory = Machine.processor().getMemory();
-	int paddr = ppn*pageSize;
-	int faddr = contentOffset + spn*pageSize;
-	int initlen;
+        int pageSize = Processor.pageSize;
+        byte[] memory = Machine.processor().getMemory();
+        int paddr = ppn*pageSize;
+        int faddr = contentOffset + spn*pageSize;
+        int initlen;
 
-	if (!initialized)
-	    initlen = 0;
-	else if (spn == numPages-1)
-	    /** initlen = size % pageSize; 
-	     *  Bug identified by Steven Schlansker 3/20/08
-	     *  Bug fix by Michael Rauser
-	     */
-	    initlen = (size==pageSize) ? pageSize : (size%pageSize);
-	else
-	    initlen = pageSize;
+        if (!initialized)
+            initlen = 0;
+        else if (spn == numPages-1)
+            /** initlen = size % pageSize;
+             *  Bug identified by Steven Schlansker 3/20/08
+             *  Bug fix by Michael Rauser
+             */
+            initlen = (size==pageSize) ? pageSize : (size%pageSize);
+        else
+            initlen = pageSize;
 
-	if (initlen > 0)
-	    Lib.strictReadFile(file, faddr, memory, paddr, initlen);
+        if (initlen > 0)
+            Lib.strictReadFile(file, faddr, memory, paddr, initlen);
 
-	Arrays.fill(memory, paddr+initlen, paddr+pageSize, (byte) 0);
+        Arrays.fill(memory, paddr+initlen, paddr+pageSize, (byte) 0);
     }
 
     /** The COFF object to which this section belongs. */

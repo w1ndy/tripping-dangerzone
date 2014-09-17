@@ -13,35 +13,35 @@ public class VMKernel extends UserKernel {
      * Allocate a new VM kernel.
      */
     public VMKernel() {
-	super();
+        super();
     }
 
     /**
      * Initialize this kernel.
      */
     public void initialize(String[] args) {
-	super.initialize(args);
+        super.initialize(args);
     }
 
     /**
      * Test this kernel.
-     */	
+     */
     public void selfTest() {
-	super.selfTest();
+        super.selfTest();
     }
 
     /**
      * Start running user programs.
      */
     public void run() {
-	super.run();
+        super.run();
     }
-    
+
     /**
      * Terminate this kernel. Never returns.
      */
     public void terminate() {
-	super.terminate();
+        super.terminate();
     }
 
     // dummy variables to make javac smarter

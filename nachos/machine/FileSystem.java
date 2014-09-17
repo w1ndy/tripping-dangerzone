@@ -7,7 +7,7 @@ package nachos.machine;
  */
 public interface FileSystem {
     /**
-     * Atomically open a file, optionally creating it if it does not 
+     * Atomically open a file, optionally creating it if it does not
      * already exist. If the file does not
      * already exist and <tt>create</tt> is <tt>false</tt>, returns
      * <tt>null</tt>. If the file does not already exist and <tt>create</tt>

@@ -20,81 +20,80 @@ public final class Config {
      *				configuration to use.
      */
     public static void load(String fileName) {
-	System.out.print(" config");
-	
-	Lib.assertTrue(!loaded);
-	loaded = true;
-	
-	configFile = fileName;
-	
-	try {
-	    config = new HashMap<String, String>();
-	
-	    File file = new File(configFile);
-	    Reader reader = new FileReader(file);
-	    StreamTokenizer s = new StreamTokenizer(reader);
+        System.out.print(" config");
 
-	    s.resetSyntax();
-	    s.whitespaceChars(0x00, 0x20);
-	    s.wordChars(0x21, 0xFF);
-	    s.eolIsSignificant(true);
-	    s.commentChar('#');
-	    s.quoteChar('"');
+        Lib.assertTrue(!loaded);
+        loaded = true;
 
-	    int line = 1;
+        configFile = fileName;
 
-	    s.nextToken();
+        try {
+            config = new HashMap<String, String>();
 
-	    while (true) {
-		if (s.ttype == StreamTokenizer.TT_EOF)
-		    break;
+            File file = new File(configFile);
+            Reader reader = new FileReader(file);
+            StreamTokenizer s = new StreamTokenizer(reader);
 
-		if (s.ttype == StreamTokenizer.TT_EOL) {
-		    line++;
-		    s.nextToken();
-		    continue;
-		}
+            s.resetSyntax();
+            s.whitespaceChars(0x00, 0x20);
+            s.wordChars(0x21, 0xFF);
+            s.eolIsSignificant(true);
+            s.commentChar('#');
+            s.quoteChar('"');
 
-		if (s.ttype != StreamTokenizer.TT_WORD)
-		    loadError(line);
+            int line = 1;
 
-		String key = s.sval;
+            s.nextToken();
 
-		if (s.nextToken() != StreamTokenizer.TT_WORD ||
-		    !s.sval.equals("="))
-		    loadError(line);
+            while (true) {
+                if (s.ttype == StreamTokenizer.TT_EOF)
+                    break;
 
-		if (s.nextToken() != StreamTokenizer.TT_WORD && s.ttype != '"')
-		    loadError(line);
+                if (s.ttype == StreamTokenizer.TT_EOL) {
+                    line++;
+                    s.nextToken();
+                    continue;
+                }
 
-		String value = s.sval;
+                if (s.ttype != StreamTokenizer.TT_WORD)
+                    loadError(line);
 
-		// ignore everything after first string
-		while (s.nextToken() != StreamTokenizer.TT_EOL &&
-		       s.ttype != StreamTokenizer.TT_EOF);
+                String key = s.sval;
 
-		if (config.get(key) != null)
-		    loadError(line);
+                if (s.nextToken() != StreamTokenizer.TT_WORD ||
+                        !s.sval.equals("="))
+                    loadError(line);
 
-		config.put(key, value);
-		line++;
-	    }
-	}
-	catch (Throwable e) {
-	    System.err.println("Error loading " + configFile);
-	    System.exit(1);
-	}
+                if (s.nextToken() != StreamTokenizer.TT_WORD && s.ttype != '"')
+                    loadError(line);
+
+                String value = s.sval;
+
+                // ignore everything after first string
+                while (s.nextToken() != StreamTokenizer.TT_EOL &&
+                        s.ttype != StreamTokenizer.TT_EOF);
+
+                if (config.get(key) != null)
+                    loadError(line);
+
+                config.put(key, value);
+                line++;
+            }
+        } catch (Throwable e) {
+            System.err.println("Error loading " + configFile);
+            System.exit(1);
+        }
     }
 
     private static void loadError(int line) {
-	System.err.println("Error in " + configFile + " line " + line);
-	System.exit(1);
+        System.err.println("Error in " + configFile + " line " + line);
+        System.exit(1);
     }
 
     private static void configError(String message) {
-	System.err.println("");
-	System.err.println("Error in " + configFile + ": " + message);
-	System.exit(1);
+        System.err.println("");
+        System.err.println("Error in " + configFile + ": " + message);
+        System.exit(1);
     }
 
     /**
@@ -105,7 +104,7 @@ public final class Config {
      *		present.
      */
     public static String getString(String key) {
-	return (String) config.get(key);
+        return (String) config.get(key);
     }
 
     /**
@@ -118,29 +117,28 @@ public final class Config {
      *		is not present.
      */
     public static String getString(String key, String defaultValue) {
-	String result = getString(key);
+        String result = getString(key);
 
-	if (result == null)
-	    return defaultValue;
+        if (result == null)
+            return defaultValue;
 
-	return result;
+        return result;
     }
 
     private static Integer requestInteger(String key) {
-	try {
-	    String value = getString(key);
-	    if (value == null)
-		return null;
-	    
-	    return new Integer(value);
-	}
-	catch (NumberFormatException e) {
-	    configError(key + " should be an integer");
-	    
-	    Lib.assertNotReached();
-	    return null;
-	}
-    }	
+        try {
+            String value = getString(key);
+            if (value == null)
+                return null;
+
+            return new Integer(value);
+        } catch (NumberFormatException e) {
+            configError(key + " should be an integer");
+
+            Lib.assertNotReached();
+            return null;
+        }
+    }
 
     /**
      * Get the value of an integer key in <tt>nachos.conf</tt>.
@@ -149,12 +147,12 @@ public final class Config {
      * @return	the value of the specified key.
      */
     public static int getInteger(String key) {
-	Integer result = requestInteger(key);
+        Integer result = requestInteger(key);
 
-	if (result == null)
-	    configError("missing int " + key);
+        if (result == null)
+            configError("missing int " + key);
 
-	return result.intValue();
+        return result.intValue();
     }
 
     /**
@@ -167,29 +165,28 @@ public final class Config {
      *		key does not exist.
      */
     public static int getInteger(String key, int defaultValue) {
-	Integer result = requestInteger(key);
+        Integer result = requestInteger(key);
 
-	if (result == null)
-	    return defaultValue;
-	
-	return result.intValue();
+        if (result == null)
+            return defaultValue;
+
+        return result.intValue();
     }
 
     private static Double requestDouble(String key) {
-	try {
-	    String value = getString(key);
-	    if (value == null)
-		return null;
+        try {
+            String value = getString(key);
+            if (value == null)
+                return null;
 
-	    return new Double(value);
-	}
-	catch (NumberFormatException e) {
-	    configError(key + " should be a double");
+            return new Double(value);
+        } catch (NumberFormatException e) {
+            configError(key + " should be a double");
 
-	    Lib.assertNotReached();
-	    return null;
-	}
-    }	
+            Lib.assertNotReached();
+            return null;
+        }
+    }
 
     /**
      * Get the value of a double key in <tt>nachos.conf</tt>.
@@ -198,12 +195,12 @@ public final class Config {
      * @return	the value of the specified key.
      */
     public static double getDouble(String key) {
-	Double result = requestDouble(key);
+        Double result = requestDouble(key);
 
-	if (result == null)
-	    configError("missing double " + key);
+        if (result == null)
+            configError("missing double " + key);
 
-	return result.doubleValue();
+        return result.doubleValue();
     }
 
     /**
@@ -216,33 +213,31 @@ public final class Config {
      *		key does not exist.
      */
     public static double getDouble(String key, double defaultValue) {
-	Double result = requestDouble(key);
+        Double result = requestDouble(key);
 
-	if (result == null)
-	    return defaultValue;
-	
-	return result.doubleValue();
+        if (result == null)
+            return defaultValue;
+
+        return result.doubleValue();
     }
 
     private static Boolean requestBoolean(String key) {
-	String value = getString(key);
+        String value = getString(key);
 
-	if (value == null)
-	    return null;
+        if (value == null)
+            return null;
 
-	if (value.equals("1") || value.toLowerCase().equals("true")) {
-	    return Boolean.TRUE;
-	}
-	else if (value.equals("0") || value.toLowerCase().equals("false")) {
-	    return Boolean.FALSE;
-	}
-	else {
-	    configError(key + " should be a boolean");
+        if (value.equals("1") || value.toLowerCase().equals("true")) {
+            return Boolean.TRUE;
+        } else if (value.equals("0") || value.toLowerCase().equals("false")) {
+            return Boolean.FALSE;
+        } else {
+            configError(key + " should be a boolean");
 
-	    Lib.assertNotReached();
-	    return null;
-	}
-    }	
+            Lib.assertNotReached();
+            return null;
+        }
+    }
 
     /**
      * Get the value of a boolean key in <tt>nachos.conf</tt>.
@@ -251,12 +246,12 @@ public final class Config {
      * @return	the value of the specified key.
      */
     public static boolean getBoolean(String key) {
-	Boolean result = requestBoolean(key);
+        Boolean result = requestBoolean(key);
 
-	if (result == null)
-	    configError("missing boolean " + key);
+        if (result == null)
+            configError("missing boolean " + key);
 
-	return result.booleanValue();
+        return result.booleanValue();
     }
 
     /**
@@ -269,13 +264,13 @@ public final class Config {
      *		key does not exist.
      */
     public static boolean getBoolean(String key, boolean defaultValue) {
-	Boolean result = requestBoolean(key);
+        Boolean result = requestBoolean(key);
 
-	if (result == null)
-	    return defaultValue;
-	
-	return result.booleanValue();
-    }	    
+        if (result == null)
+            return defaultValue;
+
+        return result.booleanValue();
+    }
 
     private static boolean loaded = false;
     private static String configFile;

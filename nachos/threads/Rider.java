@@ -12,7 +12,7 @@ public class Rider implements RiderInterface {
      */
     public Rider() {
     }
-    
+
     /**
      * Initialize this rider. The rider will access the elevator bank through
      * <i>controls</i>, and the rider will make stops at different floors as

@@ -32,7 +32,7 @@ public interface RiderControls {
      * @param	handler	the rider's interrupt handler.
      */
     public void setInterruptHandler(Runnable handler);
-	
+
     /**
      * Return the current location of the rider. If the rider is in motion,
      * the returned value will be within one of the exact location.

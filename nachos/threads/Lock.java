@@ -31,37 +31,36 @@ public class Lock {
      * this lock.
      */
     public void acquire() {
-	Lib.assertTrue(!isHeldByCurrentThread());
+        Lib.assertTrue(!isHeldByCurrentThread());
 
-	boolean intStatus = Machine.interrupt().disable();
-	KThread thread = KThread.currentThread();
+        boolean intStatus = Machine.interrupt().disable();
+        KThread thread = KThread.currentThread();
 
-	if (lockHolder != null) {
-	    waitQueue.waitForAccess(thread);
-	    KThread.sleep();
-	}
-	else {
-	    waitQueue.acquire(thread);
-	    lockHolder = thread;
-	}
+        if (lockHolder != null) {
+            waitQueue.waitForAccess(thread);
+            KThread.sleep();
+        } else {
+            waitQueue.acquire(thread);
+            lockHolder = thread;
+        }
 
-	Lib.assertTrue(lockHolder == thread);
+        Lib.assertTrue(lockHolder == thread);
 
-	Machine.interrupt().restore(intStatus);
+        Machine.interrupt().restore(intStatus);
     }
 
     /**
      * Atomically release this lock, allowing other threads to acquire it.
      */
     public void release() {
-	Lib.assertTrue(isHeldByCurrentThread());
+        Lib.assertTrue(isHeldByCurrentThread());
 
-	boolean intStatus = Machine.interrupt().disable();
+        boolean intStatus = Machine.interrupt().disable();
 
-	if ((lockHolder = waitQueue.nextThread()) != null)
-	    lockHolder.ready();
-	
-	Machine.interrupt().restore(intStatus);
+        if ((lockHolder = waitQueue.nextThread()) != null)
+            lockHolder.ready();
+
+        Machine.interrupt().restore(intStatus);
     }
 
     /**
@@ -70,10 +69,10 @@ public class Lock {
      * @return	true if the current thread holds this lock.
      */
     public boolean isHeldByCurrentThread() {
-	return (lockHolder == KThread.currentThread());
+        return (lockHolder == KThread.currentThread());
     }
 
     private KThread lockHolder = null;
     private ThreadQueue waitQueue =
-	ThreadedKernel.scheduler.newThreadQueue(true);
+        ThreadedKernel.scheduler.newThreadQueue(true);
 }

@@ -29,129 +29,126 @@ public class AutoGrader {
      * 				machine.
      */
     public void start(Privilege privilege) {
-	Lib.assertTrue(this.privilege == null,
-		   "start() called multiple times");
-	this.privilege = privilege;
+        Lib.assertTrue(this.privilege == null,
+                       "start() called multiple times");
+        this.privilege = privilege;
 
-	String[] args = Machine.getCommandLineArguments();
+        String[] args = Machine.getCommandLineArguments();
 
-	extractArguments(args);
+        extractArguments(args);
 
-	System.out.print(" grader");
+        System.out.print(" grader");
 
-	init();
+        init();
 
-	System.out.print("\n");	
+        System.out.print("\n");
 
-	kernel =
-	    (Kernel) Lib.constructObject(Config.getString("Kernel.kernel"));
-	kernel.initialize(args);
+        kernel =
+            (Kernel) Lib.constructObject(Config.getString("Kernel.kernel"));
+        kernel.initialize(args);
 
-	run();
+        run();
     }
 
     private void extractArguments(String[] args) {
-	String testArgsString = Config.getString("AutoGrader.testArgs");
-	if (testArgsString == null) {
-		testArgsString = "";
-	}
-	
-	for (int i=0; i<args.length; ) {
-	    String arg = args[i++];
-	    if (arg.length() > 0 && arg.charAt(0) == '-') {
-		if (arg.equals("-#")) {
-		    Lib.assertTrue(i < args.length,
-			       "-# switch missing argument");
-		    testArgsString = args[i++];
-		}
-	    }
-	}
+        String testArgsString = Config.getString("AutoGrader.testArgs");
+        if (testArgsString == null) {
+            testArgsString = "";
+        }
 
-	StringTokenizer st = new StringTokenizer(testArgsString, ",\n\t\f\r");
+        for (int i=0; i<args.length; ) {
+            String arg = args[i++];
+            if (arg.length() > 0 && arg.charAt(0) == '-') {
+                if (arg.equals("-#")) {
+                    Lib.assertTrue(i < args.length,
+                                   "-# switch missing argument");
+                    testArgsString = args[i++];
+                }
+            }
+        }
 
-	while (st.hasMoreTokens()) {
-	    StringTokenizer pair = new StringTokenizer(st.nextToken(), "=");
+        StringTokenizer st = new StringTokenizer(testArgsString, ",\n\t\f\r");
 
-	    Lib.assertTrue(pair.hasMoreTokens(),
-		       "test argument missing key");
-	    String key = pair.nextToken();
+        while (st.hasMoreTokens()) {
+            StringTokenizer pair = new StringTokenizer(st.nextToken(), "=");
 
-	    Lib.assertTrue(pair.hasMoreTokens(),
-		       "test argument missing value");
-	    String value = pair.nextToken();
+            Lib.assertTrue(pair.hasMoreTokens(),
+                           "test argument missing key");
+            String key = pair.nextToken();
 
-	    testArgs.put(key, value);
-	}	
+            Lib.assertTrue(pair.hasMoreTokens(),
+                           "test argument missing value");
+            String value = pair.nextToken();
+
+            testArgs.put(key, value);
+        }
     }
 
     String getStringArgument(String key) {
-	String value = (String) testArgs.get(key);
-	Lib.assertTrue(value != null,
-		   "getStringArgument(" + key + ") failed to find key");
-	return value;
+        String value = (String) testArgs.get(key);
+        Lib.assertTrue(value != null,
+                       "getStringArgument(" + key + ") failed to find key");
+        return value;
     }
 
     int getIntegerArgument(String key) {
-	try {
-	    return Integer.parseInt(getStringArgument(key));
-	}
-	catch (NumberFormatException e) {
-	    Lib.assertNotReached("getIntegerArgument(" + key + ") failed: " +
-				 "value is not an integer");
-	    return 0;
-	}
+        try {
+            return Integer.parseInt(getStringArgument(key));
+        } catch (NumberFormatException e) {
+            Lib.assertNotReached("getIntegerArgument(" + key + ") failed: " +
+                                 "value is not an integer");
+            return 0;
+        }
     }
 
     boolean getBooleanArgument(String key) {
-	String value = getStringArgument(key);
+        String value = getStringArgument(key);
 
-	if (value.equals("1") || value.toLowerCase().equals("true")) {
-	    return true;
-	}
-	else if (value.equals("0") || value.toLowerCase().equals("false")) {
-	    return false;
-	}
-	else {
-	    Lib.assertNotReached("getBooleanArgument(" + key + ") failed: " +
-				 "value is not a boolean");
-	    return false;
-	}	
+        if (value.equals("1") || value.toLowerCase().equals("true")) {
+            return true;
+        } else if (value.equals("0") || value.toLowerCase().equals("false")) {
+            return false;
+        } else {
+            Lib.assertNotReached("getBooleanArgument(" + key + ") failed: " +
+                                 "value is not a boolean");
+            return false;
+        }
     }
 
     long getTime() {
-	return privilege.stats.totalTicks;
+        return privilege.stats.totalTicks;
     }
 
     void targetLevel(int targetLevel) {
-	this.targetLevel = targetLevel;
+        this.targetLevel = targetLevel;
     }
 
     void level(int level) {
-	this.level++;	
-	Lib.assertTrue(level == this.level,
-		   "level() advanced more than one step: test jumped ahead");
-	
-	if (level == targetLevel)
-	    done();
+        this.level++;
+        Lib.assertTrue(level == this.level,
+                       "level() advanced more than one step: test jumped ahead");
+
+        if (level == targetLevel)
+            done();
     }
 
     private int level = 0, targetLevel = 0;
 
     void done() {
-	System.out.print("\nsuccess\n");
-	privilege.exit(162);
+        System.out.print("\nsuccess\n");
+        privilege.exit(162);
     }
 
-    private Hashtable<String, String> testArgs = 
+    private Hashtable<String, String> testArgs =
         new Hashtable<String, String>();
 
     void init() {
     }
-    
+
     void run() {
-	kernel.selfTest();
-	kernel.run();
-	kernel.terminate();
+        kernel.selfTest();
+        kernel.run();
+        kernel.terminate();
     }
 
     Privilege privilege = null;
@@ -185,8 +182,8 @@ public class AutoGrader {
      * @param	thread	the thread that is now running.
      */
     public void runningThread(KThread thread) {
-	privilege.tcb.associateThread(thread);
-	currentThread = thread;
+        privilege.tcb.associateThread(thread);
+        currentThread = thread;
     }
 
     /**
@@ -195,7 +192,7 @@ public class AutoGrader {
      * the thread to sleep and scheduling its TCB to be destroyed.
      */
     public void finishingCurrentThread() {
-	privilege.tcb.authorizeDestroy(currentThread);
+        privilege.tcb.authorizeDestroy(currentThread);
     }
 
     /**
@@ -208,8 +205,8 @@ public class AutoGrader {
      *			issued.
      */
     public void timerInterrupt(Privilege privilege, long time) {
-	Lib.assertTrue(privilege == this.privilege,
-		   "security violation");
+        Lib.assertTrue(privilege == this.privilege,
+                       "security violation");
     }
 
     /**
@@ -220,9 +217,9 @@ public class AutoGrader {
      * @return	<tt>true</tt> if the kernel exception handler should be called.
      */
     public boolean exceptionHandler(Privilege privilege) {
-	Lib.assertTrue(privilege == this.privilege,
-		   "security violation");
-	return true;
+        Lib.assertTrue(privilege == this.privilege,
+                       "security violation");
+        return true;
     }
 
     /**
@@ -232,8 +229,8 @@ public class AutoGrader {
      * @param	privilege	proves the authenticity of this call.
      */
     public void runProcessor(Privilege privilege) {
-	Lib.assertTrue(privilege == this.privilege,
-		   "security violation");
+        Lib.assertTrue(privilege == this.privilege,
+                       "security violation");
     }
 
     /**
@@ -246,7 +243,7 @@ public class AutoGrader {
      *		the default.
      */
     public Coff createLoader(OpenFile file) {
-	return null;
+        return null;
     }
 
     /**
@@ -257,11 +254,11 @@ public class AutoGrader {
      * @return	<tt>true</tt> if the packet should be sent.
      */
     public boolean canSendPacket(Privilege privilege) {
-	Lib.assertTrue(privilege == this.privilege,
-		   "security violation");
-	return true;
+        Lib.assertTrue(privilege == this.privilege,
+                       "security violation");
+        return true;
     }
-    
+
     /**
      * Request permission to receive a packet. The autograder can use this to
      * drop packets very selectively.
@@ -270,10 +267,10 @@ public class AutoGrader {
      * @return	<tt>true</tt> if the packet should be delivered to the kernel.
      */
     public boolean canReceivePacket(Privilege privilege) {
-	Lib.assertTrue(privilege == this.privilege,
-		   "security violation");
-	return true;
+        Lib.assertTrue(privilege == this.privilege,
+                       "security violation");
+        return true;
     }
-    
+
     private KThread currentThread;
 }

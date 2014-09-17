@@ -16,27 +16,27 @@ public class Packet {
      * @param	contents	the contents of the packet.
      */
     public Packet(int dstLink, int srcLink, byte[] contents)
-	throws MalformedPacketException {
-	// make sure the paramters are valid
-	if (dstLink < 0 || dstLink >= linkAddressLimit ||
-	    srcLink < 0 || srcLink >= linkAddressLimit ||
-	    contents.length > maxContentsLength)
-	    throw new MalformedPacketException();
-	    
-	this.dstLink = dstLink;
-	this.srcLink = srcLink;
-	this.contents = contents;
+    throws MalformedPacketException {
+        // make sure the paramters are valid
+        if (dstLink < 0 || dstLink >= linkAddressLimit ||
+                srcLink < 0 || srcLink >= linkAddressLimit ||
+                contents.length > maxContentsLength)
+            throw new MalformedPacketException();
 
-	packetBytes = new byte[headerLength + contents.length];
+        this.dstLink = dstLink;
+        this.srcLink = srcLink;
+        this.contents = contents;
 
-	packetBytes[0] = NetworkLink.networkID;
-	packetBytes[1] = (byte) dstLink;
-	packetBytes[2] = (byte) srcLink;
-	packetBytes[3] = (byte) contents.length;
+        packetBytes = new byte[headerLength + contents.length];
 
-	// if java had subarrays, i'd use them. but System.arraycopy is ok...
-	System.arraycopy(contents, 0, packetBytes, headerLength,
-			 contents.length);
+        packetBytes[0] = NetworkLink.networkID;
+        packetBytes[1] = (byte) dstLink;
+        packetBytes[2] = (byte) srcLink;
+        packetBytes[3] = (byte) contents.length;
+
+        // if java had subarrays, i'd use them. but System.arraycopy is ok...
+        System.arraycopy(contents, 0, packetBytes, headerLength,
+                         contents.length);
     }
 
     /**
@@ -46,22 +46,22 @@ public class Packet {
      * @param	packetBytes	the bytes making up this packet.
      */
     public Packet(byte[] packetBytes) throws MalformedPacketException {
-	this.packetBytes = packetBytes;
-	
-	// make sure we have a valid header
-	if (packetBytes.length < headerLength ||
-	    packetBytes[0] != NetworkLink.networkID ||
-	    packetBytes[1] < 0 || packetBytes[1] >= linkAddressLimit ||
-	    packetBytes[2] < 0 || packetBytes[2] >= linkAddressLimit ||
-	    packetBytes[3] < 0 || packetBytes[3] > packetBytes.length-4)
-	    throw new MalformedPacketException();
+        this.packetBytes = packetBytes;
 
-	dstLink = packetBytes[1];
-	srcLink = packetBytes[2];
+        // make sure we have a valid header
+        if (packetBytes.length < headerLength ||
+                packetBytes[0] != NetworkLink.networkID ||
+                packetBytes[1] < 0 || packetBytes[1] >= linkAddressLimit ||
+                packetBytes[2] < 0 || packetBytes[2] >= linkAddressLimit ||
+                packetBytes[3] < 0 || packetBytes[3] > packetBytes.length-4)
+            throw new MalformedPacketException();
 
-	contents = new byte[packetBytes[3]];
-	System.arraycopy(packetBytes, headerLength, contents, 0,
-			 contents.length);
+        dstLink = packetBytes[1];
+        srcLink = packetBytes[2];
+
+        contents = new byte[packetBytes[3]];
+        System.arraycopy(packetBytes, headerLength, contents, 0,
+                         contents.length);
     }
 
     /** This packet, as an array of bytes that can be sent on a network. */
@@ -96,7 +96,7 @@ public class Packet {
      * that this is just <tt>maxPacketLength - headerLength</tt>.
      */
     public static final int maxContentsLength = maxPacketLength - headerLength;
-    
+
     /**
      * The upper limit on Nachos link addresses. All link addresses fall
      * between <tt>0</tt> and <tt>linkAddressLimit - 1</tt>.
