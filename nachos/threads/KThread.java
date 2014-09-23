@@ -418,13 +418,67 @@ public class KThread {
         }
     }
 
+    private static class ConditionTest implements Runnable {
+        private static class SlaveThread implements Runnable {
+            public SlaveThread(Condition2 c, Lock l, int id) {
+                _c = c;
+                _l = l;
+                _id = id;
+            }
+
+            public void run() {
+                slaveReady++;
+                _l.acquire();
+                _c.sleep();
+                _l.release();
+                for(int i = 0; i < 3; i++) {
+                    System.out.println("Slave " + _id + " echoes");
+                    currentThread.yield();
+                }
+                slaveCompleted = true;
+            }
+
+            private Condition2 _c;
+            private Lock _l;
+            private int _id;
+        }
+
+        public ConditionTest() {
+            lock = new Lock();
+            cond = new Condition2(lock);
+        }
+
+        public void run() {
+            (new KThread(new SlaveThread(cond, lock, 1))).fork();
+            (new KThread(new SlaveThread(cond, lock, 2))).fork();
+            (new KThread(new SlaveThread(cond, lock, 3))).fork();
+            while(slaveReady < 3)
+                currentThread.yield();
+            for(int i = 0; i < 3; i++) {
+                slaveCompleted = false;
+                lock.acquire();
+                cond.wake();
+                lock.release();
+                while(!slaveCompleted)
+                    currentThread.yield();
+            }
+        }
+
+        private Condition2 cond;
+        private Lock lock;
+
+        public static boolean slaveCompleted = false;
+        public static int slaveReady = 0;
+    }
+
     /**
      * Tests whether this module is working.
      */
     public static void selfTest() {
         Lib.debug(dbgThread, "Enter KThread.selfTest");
 
-        new JoinTest().run();
+        new ConditionTest().run();
+        //new JoinTest().run();
         //new KThread(new PingTest(1)).setName("forked thread").fork();
         //new PingTest(0).run();
     }
