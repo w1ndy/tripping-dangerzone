@@ -474,7 +474,7 @@ public class KThread {
     private static class AlarmTest implements Runnable {
         public void run() {
             System.out.println("Next message will be printed after 5000000 ticks.");
-            (new Alarm()).waitUntil(5000000);
+            ThreadedKernel.alarm.waitUntil(5000000);
             System.out.println("5000000 ticks done.");
         }
     }

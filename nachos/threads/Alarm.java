@@ -61,7 +61,7 @@ public class Alarm {
         BlockedThread t = new BlockedThread();
         t.t = KThread.currentThread();
         t.x = x + Machine.timer().getTime();
-        waitQueue.add(t);
+        waitQueue.offer(t);
         KThread.sleep();
     }
 
