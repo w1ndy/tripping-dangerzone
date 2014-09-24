@@ -471,13 +471,22 @@ public class KThread {
         public static int slaveReady = 0;
     }
 
+    private static class AlarmTest implements Runnable {
+        public void run() {
+            System.out.println("Next message will be printed after 5000000 ticks.");
+            (new Alarm()).waitUntil(5000000);
+            System.out.println("5000000 ticks done.");
+        }
+    }
+
     /**
      * Tests whether this module is working.
      */
     public static void selfTest() {
         Lib.debug(dbgThread, "Enter KThread.selfTest");
 
-        new ConditionTest().run();
+        (new KThread(new ConditionTest())).fork();
+        new AlarmTest().run();
         //new JoinTest().run();
         //new KThread(new PingTest(1)).setName("forked thread").fork();
         //new PingTest(0).run();
