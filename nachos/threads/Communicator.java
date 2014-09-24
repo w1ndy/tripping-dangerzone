@@ -2,6 +2,8 @@ package nachos.threads;
 
 import nachos.machine.*;
 
+import java.util.Queue;
+
 /**
  * A <i>communicator</i> allows threads to synchronously exchange 32-bit
  * messages. Multiple threads can be waiting to <i>speak</i>,
@@ -27,6 +29,21 @@ public class Communicator {
      * @param	word	the integer to transfer.
      */
     public void speak(int word) {
+        if(speakerCount >= 0) {
+            condLock.acquire();
+            speakerCount++;
+            cond.sleep();
+            speakerCount--;
+            msg = word;
+            msgStored = true;
+            condLock.release();
+        } else {
+            condLock.acquire();
+            msg = word;
+            msgStored = true;
+            cond.wake();
+            condLock.release();
+        }
     }
 
     /**
@@ -36,6 +53,29 @@ public class Communicator {
      * @return	the integer transferred.
      */
     public int listen() {
-        return 0;
+        if(speakerCount <= 0) {
+            condLock.acquire();
+            speakerCount--;
+            cond.sleep();
+            speakerCount++;
+            msgStored = false;
+            condLock.release();
+            return msg;
+        } else {
+            condLock.acquire();
+            msgStored = false;
+            cond.wake();
+            condLock.release();
+            while(!msgStored) {
+                KThread.yield();
+            }
+            msgStored =false;
+            return msg;
+        }
     }
+
+    private Lock condLock = new Lock();
+    private Condition2 cond = new Condition2(condLock);
+    private int speakerCount, msg;
+    private boolean msgStored;
 }

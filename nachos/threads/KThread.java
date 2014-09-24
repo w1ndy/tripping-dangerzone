@@ -2,6 +2,8 @@ package nachos.threads;
 
 import nachos.machine.*;
 
+import java.util.Random;
+
 /**
  * A KThread is a thread that can be used to execute Nachos kernel code. Nachos
  * allows multiple threads to run concurrently.
@@ -479,13 +481,42 @@ public class KThread {
         }
     }
 
+    private static class CommunicatorTest implements Runnable {
+        private static class Speaker implements Runnable {
+            public void run() {
+                int x = (new Random()).nextInt();
+                System.out.println("Sending " + x + "...");
+                c.speak(x);
+                System.out.println("Word " + x + " sent.");
+            }
+        }
+
+        private static class Listener implements Runnable {
+            public void run() {
+                System.out.println("Listening...");
+                int x = c.listen();
+                System.out.println("Received " + x + ".");
+            }
+        }
+
+        public void run() {
+            (new KThread(new Speaker())).fork();
+            (new KThread(new Speaker())).fork();
+            (new KThread(new Listener())).fork();
+            (new KThread(new Listener())).fork();
+        }
+
+        public static Communicator c = new Communicator();
+    }
+
     /**
      * Tests whether this module is working.
      */
     public static void selfTest() {
         Lib.debug(dbgThread, "Enter KThread.selfTest");
 
-        (new KThread(new ConditionTest())).fork();
+        (new KThread(new CommunicatorTest())).fork();
+        //(new KThread(new ConditionTest())).fork();
         new AlarmTest().run();
         //new JoinTest().run();
         //new KThread(new PingTest(1)).setName("forked thread").fork();
