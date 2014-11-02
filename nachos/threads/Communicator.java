@@ -39,7 +39,6 @@ public class Communicator {
         }
         inTransaction = true;
         msg = word;
-        listenerQueue.print_dbg();
         listenerQueue.wake();
 
         commLock.release();
