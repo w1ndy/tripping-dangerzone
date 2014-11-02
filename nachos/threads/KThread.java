@@ -515,9 +515,9 @@ public class KThread {
     public static void selfTest() {
         Lib.debug(dbgThread, "Enter KThread.selfTest");
 
-        (new KThread(new CommunicatorTest())).fork();
+        //(new KThread(new CommunicatorTest())).fork();
         //(new KThread(new ConditionTest())).fork();
-        new AlarmTest().run();
+        //new AlarmTest().run();
         //new JoinTest().run();
         //new KThread(new PingTest(1)).setName("forked thread").fork();
         //new PingTest(0).run();

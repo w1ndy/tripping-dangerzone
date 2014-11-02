@@ -16,6 +16,7 @@ public class Communicator {
      * Allocate a new communicator.
      */
     public Communicator() {
+        inTransaction = false;
     }
 
     /**
@@ -29,21 +30,20 @@ public class Communicator {
      * @param	word	the integer to transfer.
      */
     public void speak(int word) {
-        if(speakerCount >= 0) {
-            condLock.acquire();
-            speakerCount++;
-            cond.sleep();
-            speakerCount--;
-            msg = word;
-            msgStored = true;
-            condLock.release();
-        } else {
-            condLock.acquire();
-            msg = word;
-            msgStored = true;
-            cond.wake();
-            condLock.release();
+        commLock.acquire();
+
+        while(inTransaction || listenerQueue.getThreadCount() == 0) {
+            //System.out.println("speaker " + KThread.currentThread() + " sleep, " + speakerQueue.getThreadCount() + " speakers " + listenerQueue.getThreadCount() + " listeners");
+            speakerQueue.sleep();
+            //System.out.println("speaker " + KThread.currentThread() + " wake, " + speakerQueue.getThreadCount() + " speakers " + listenerQueue.getThreadCount() + " listeners");
         }
+        inTransaction = true;
+        msg = word;
+        listenerQueue.print_dbg();
+        listenerQueue.wake();
+
+        commLock.release();
+        //System.out.println("speaker " + KThread.currentThread() + " out, " + speakerQueue.getThreadCount() + " speakers " + listenerQueue.getThreadCount() + " listeners");
     }
 
     /**
@@ -53,29 +53,29 @@ public class Communicator {
      * @return	the integer transferred.
      */
     public int listen() {
-        if(speakerCount <= 0) {
-            condLock.acquire();
-            speakerCount--;
-            cond.sleep();
-            speakerCount++;
-            msgStored = false;
-            condLock.release();
-            return msg;
-        } else {
-            condLock.acquire();
-            msgStored = false;
-            cond.wake();
-            condLock.release();
-            while(!msgStored) {
-                KThread.yield();
-            }
-            msgStored =false;
-            return msg;
+        int ret;
+        commLock.acquire();
+
+        while(!inTransaction) {
+            if(speakerQueue.getThreadCount() > 0)
+                speakerQueue.wake();
+            //System.out.println("listener " + KThread.currentThread() + " sleep, " + speakerQueue.getThreadCount() + " speakers " + listenerQueue.getThreadCount() + " listeners");
+            listenerQueue.sleep();
+            //System.out.println("listener " + KThread.currentThread() + " wake, " + speakerQueue.getThreadCount() + " speakers " + listenerQueue.getThreadCount() + " listeners");
         }
+        ret = msg;
+        inTransaction = false;
+        if(listenerQueue.getThreadCount() > 0 && speakerQueue.getThreadCount() > 0)
+            speakerQueue.wake();
+
+        commLock.release();
+        //System.out.println("listener " + KThread.currentThread() + " out, " + speakerQueue.getThreadCount() + " speakers " + listenerQueue.getThreadCount() + " listeners");
+        return ret;
     }
 
-    private Lock condLock = new Lock();
-    private Condition2 cond = new Condition2(condLock);
-    private int speakerCount, msg;
-    private boolean msgStored;
+    private Lock commLock = new Lock();
+    private Condition2 speakerQueue = new Condition2(commLock);
+    private Condition2 listenerQueue = new Condition2(commLock);
+    private int msg;
+    private boolean inTransaction;
 }

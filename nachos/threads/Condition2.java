@@ -65,6 +65,10 @@ public class Condition2 {
             wake();
     }
 
+    public int getThreadCount() {
+        return waitQueue.size();
+    }
+    
     private Lock conditionLock;
     private LinkedList<KThread> waitQueue;
 }
