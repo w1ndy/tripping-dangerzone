@@ -179,7 +179,7 @@ public class PriorityScheduler extends Scheduler {
 
             ThreadWrapper w = queue.poll();
             threadStates.remove(w.state);
-            //if(transferPriority && w.state.getEffectivePriority() == maximumPriority)
+            if(transferPriority && w.state.getEffectivePriority() == maximumPriority)
                 resetMaximumPriority();
             Lib.debug('P', "NextThread: " + w.state.thread + ", priority = " + w.state.getPriority() + ", effective priority = " + w.state.getEffectivePriority() + ", size = " + queue.size());
             acquire(w.state.thread);
@@ -215,7 +215,10 @@ public class PriorityScheduler extends Scheduler {
 
         public void print() {
             Lib.assertTrue(Machine.interrupt().disabled());
-            // implement me (if you want)
+            System.out.println("In queue: " + queue.size() + " total");
+            for(Map.Entry<ThreadState, ThreadWrapper> e : threadStates.entrySet()) {
+                System.out.println("  " + e.getKey().thread + " priority " + e.getKey().getEffectivePriority());
+            }
         }
 
         /**

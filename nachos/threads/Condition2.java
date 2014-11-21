@@ -24,7 +24,6 @@ public class Condition2 {
      */
     public Condition2(Lock conditionLock) {
         this.conditionLock = conditionLock;
-        waitQueue = new LinkedList<KThread>();
     }
 
     /**
@@ -35,10 +34,11 @@ public class Condition2 {
      */
     public void sleep() {
         Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-        waitQueue.add(KThread.currentThread());
 
         conditionLock.release();
         Machine.interrupt().disable();
+        count++;
+        waitQueue.waitForAccess(KThread.currentThread());
         KThread.sleep();
         conditionLock.acquire();
     }
@@ -50,8 +50,11 @@ public class Condition2 {
     public void wake() {
         Lib.assertTrue(conditionLock.isHeldByCurrentThread());
         boolean intStatus = Machine.interrupt().disable();
-        if(!waitQueue.isEmpty())
-            ((KThread) waitQueue.removeFirst()).ready();
+        KThread t = waitQueue.nextThread();
+        if(t != null) {
+            count--;
+            t.ready();
+        }
         Machine.interrupt().restore(intStatus);
     }
 
@@ -61,14 +64,24 @@ public class Condition2 {
      */
     public void wakeAll() {
         Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-        while(!waitQueue.isEmpty())
-            wake();
+        boolean intStatus = Machine.interrupt().disable();
+        KThread t;
+        while((t = waitQueue.nextThread()) != null)
+            t.ready();
+        count = 0;
+        Machine.interrupt().restore(intStatus);
+    }
+    
+    public void acquireDonation(KThread t) {
+        waitQueue.acquire(t);
     }
 
     public int getThreadCount() {
-        return waitQueue.size();
+        return count;
     }
-    
+
     private Lock conditionLock;
-    private LinkedList<KThread> waitQueue;
+    private ThreadQueue waitQueue =
+        ThreadedKernel.scheduler.newThreadQueue(true);
+    private int count;
 }

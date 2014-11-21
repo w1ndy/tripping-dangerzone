@@ -33,7 +33,7 @@ public class KThread {
     /**
      * Get the current thread.
      *
-     * @return	the current thread.
+     * @return  the current thread.
      */
     public static KThread currentThread() {
         Lib.assertTrue(currentThread != null);
@@ -63,7 +63,7 @@ public class KThread {
     /**
      * Allocate a new KThread.
      *
-     * @param	target	the object whose <tt>run</tt> method is called.
+     * @param   target  the object whose <tt>run</tt> method is called.
      */
     public KThread(Runnable target) {
         this();
@@ -73,8 +73,8 @@ public class KThread {
     /**
      * Set the target of this thread.
      *
-     * @param	target	the object whose <tt>run</tt> method is called.
-     * @return	this thread.
+     * @param   target  the object whose <tt>run</tt> method is called.
+     * @return  this thread.
      */
     public KThread setTarget(Runnable target) {
         Lib.assertTrue(status == statusNew);
@@ -87,8 +87,8 @@ public class KThread {
      * Set the name of this thread. This name is used for debugging purposes
      * only.
      *
-     * @param	name	the name to give to this thread.
-     * @return	this thread.
+     * @param   name    the name to give to this thread.
+     * @return  this thread.
      */
     public KThread setName(String name) {
         this.name = name;
@@ -99,7 +99,7 @@ public class KThread {
      * Get the name of this thread. This name is used for debugging purposes
      * only.
      *
-     * @return	the name given to this thread.
+     * @return  the name given to this thread.
      */
     public String getName() {
         return name;
@@ -109,7 +109,7 @@ public class KThread {
      * Get the full name of this thread. This includes its name along with its
      * numerical ID. This name is used for debugging purposes only.
      *
-     * @return	the full name given to this thread.
+     * @return  the full name given to this thread.
      */
     public String toString() {
         return (name + " (#" + id + ")");
@@ -168,7 +168,6 @@ public class KThread {
         Lib.assertTrue(this == currentThread);
 
         restoreState();
-        joinLock.acquire();
 
         Machine.interrupt().enable();
     }
@@ -193,7 +192,10 @@ public class KThread {
         Lib.assertTrue(toBeDestroyed == null);
         toBeDestroyed = currentThread;
 
+        currentThread.joinLock.acquire();
+        currentThread.joinCondition.wakeAll();
         currentThread.joinLock.release();
+
         currentThread.status = statusFinished;
 
         sleep();
@@ -262,6 +264,7 @@ public class KThread {
         Lib.assertTrue(status != statusReady);
 
         status = statusReady;
+        joinCondition.acquireDonation(this);
         if (this != idleThread)
             readyQueue.waitForAccess(this);
 
@@ -278,9 +281,12 @@ public class KThread {
         Lib.debug(dbgThread, "Joining to thread: " + toString());
 
         Lib.assertTrue(this != currentThread);
+        if(this.status == statusFinished) {
+            return ;
+        }
 
-        KThread.yield();    //
         joinLock.acquire();
+        joinCondition.sleep();
         joinLock.release();
     }
 
@@ -336,9 +342,9 @@ public class KThread {
      * changed from running to blocked or ready (depending on whether the
      * thread is sleeping or yielding).
      *
-     * @param	finishing	<tt>true</tt> if the current thread is
-     *				finished, and should be destroyed by the new
-     *				thread.
+     * @param   finishing   <tt>true</tt> if the current thread is
+     *              finished, and should be destroyed by the new
+     *              thread.
      */
     private void run() {
         Lib.assertTrue(Machine.interrupt().disabled());
@@ -526,7 +532,7 @@ public class KThread {
     /**
      * Additional state used by schedulers.
      *
-     * @see	nachos.threads.PriorityScheduler.ThreadState
+     * @see nachos.threads.PriorityScheduler.ThreadState
      */
     public Object schedulingState = null;
 
@@ -547,6 +553,7 @@ public class KThread {
     private TCB tcb;
 
     public Lock joinLock = new Lock();
+    public Condition2 joinCondition = new Condition2(joinLock);
 
     /**
      * Unique identifer for this thread. Used to deterministically compare
@@ -556,7 +563,7 @@ public class KThread {
     /** Number of times the KThread constructor was called. */
     private static int numCreated = 0;
 
-    private static ThreadQueue readyQueue = null;
+    public static ThreadQueue readyQueue = null;
     private static KThread currentThread = null;
     private static KThread toBeDestroyed = null;
     private static KThread idleThread = null;
