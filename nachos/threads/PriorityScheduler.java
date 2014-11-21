@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * A scheduler that chooses threads based on their priorities.
@@ -130,66 +131,75 @@ public class PriorityScheduler extends Scheduler {
     protected class PriorityQueue extends ThreadQueue {
         PriorityQueue(boolean transferPriority) {
             this.transferPriority = transferPriority;
-            this.maximumPriority = priorityDefault;
+            this.maximumPriority = priorityMinimum;
             donateTarget = null;
         }
 
         public void waitForAccess(KThread thread) {
-            //System.out.println("! Thread " + thread.toString() + " waiting for access.");
             Lib.assertTrue(Machine.interrupt().disabled());
             Lib.assertTrue(!threadStates.containsKey(getThreadState(thread)));
 
             threadStates.put(getThreadState(thread), new ThreadWrapper(getThreadState(thread)));
             queue.offer(threadStates.get(getThreadState(thread)));
 
-            if(transferPriority) {
-                Lib.assertTrue(donateTarget != null);
+            getThreadState(thread).waitForAccess(this);
 
-                maximumPriority = (getThreadState(thread).getEffectivePriority() > maximumPriority) ? getThreadState(thread).getEffectivePriority() : maximumPriority;
-                if(maximumPriority > donateTarget.getEffectivePriority()) {
-                    donateTarget.setEffectivePriority(maximumPriority);
-                    if(threadStates.containsKey(donateTarget)) {
-                        ThreadWrapper w = threadStates.get(donateTarget);
-                        queue.remove(w);
-                        queue.offer(w);
-                    }
+            if(transferPriority) {
+                maximumPriority = Math.max(getThreadState(thread).getEffectivePriority(), maximumPriority);
+                if(donateTarget != null && maximumPriority > donateTarget.getEffectivePriority()) {
+                    donateTarget.donatePriority(this, maximumPriority);
+                    System.out.println("transferring priority... maximum is " + maximumPriority + "...target is " + donateTarget.thread);
                 }
             }
 
-            getThreadState(thread).waitForAccess(this);
-            //System.out.println("! Inserted. queue size = " + queue.size());
+            Lib.debug('P', "Inserted: " + thread + ", priority = " + getThreadState(thread).getPriority() + ", effective priority = " + getThreadState(thread).getEffectivePriority() + ", size = " + queue.size());
         }
 
         public void acquire(KThread thread) {
-            //System.out.println("! Thread " + thread + " acquiring...");
             Lib.assertTrue(Machine.interrupt().disabled());
             Lib.assertTrue(!threadStates.containsKey(getThreadState(thread)));
 
+            getThreadState(thread).acquire(this);
+
             if(transferPriority) {
-                if(maximumPriority > getThreadState(thread).getEffectivePriority()) 
-                    getThreadState(thread).setEffectivePriority(maximumPriority);
+                if(donateTarget != null)
+                    donateTarget.retractDonatedPriority(this);
                 donateTarget = getThreadState(thread);
+                donateTarget.donatePriority(this, maximumPriority);
             }
 
-            getThreadState(thread).acquire(this);
+            Lib.debug('P', "Acquired: " + thread + ", priority = " + getThreadState(thread).getPriority() + ", effective priority = " + getThreadState(thread).getEffectivePriority() + ", size = " + queue.size());
+            Lib.assertTrue(!transferPriority || !queue.isEmpty() || maximumPriority == priorityMinimum);
         }
 
         public KThread nextThread() {
-            //System.out.println("! Pumping next thread");
             Lib.assertTrue(Machine.interrupt().disabled());
             if(queue.isEmpty())
                 return null;
+
             ThreadWrapper w = queue.poll();
-            if(transferPriority && w.state.getPriority() == maximumPriority)
-                resetMaximumPriority();
             threadStates.remove(w.state);
+            //if(transferPriority && w.state.getEffectivePriority() == maximumPriority)
+                resetMaximumPriority();
+            Lib.debug('P', "NextThread: " + w.state.thread + ", priority = " + w.state.getPriority() + ", effective priority = " + w.state.getEffectivePriority() + ", size = " + queue.size());
+            acquire(w.state.thread);
             return w.state.thread;
         }
 
         public void resetMaximumPriority() {
-            maximumPriority = priorityDefault;
+            maximumPriority = priorityMinimum;
             for(Map.Entry<ThreadState, ThreadWrapper> e : threadStates.entrySet())
-                maximumPriority = (maximumPriority > e.getKey().getEffectivePriority()) ? maximumPriority : e.getKey().getEffectivePriority();
+                maximumPriority = Math.max(maximumPriority, e.getKey().getEffectivePriority());
+            Lib.debug('P', "Reset maximum priority to " + maximumPriority);
+        }
+
+        public void updateThreadState(ThreadState s) {
+            if(threadStates.containsKey(s)) {
+                Lib.debug('P', "Updating: " + s.thread + ", priority = " + s.getPriority() + ", effective priority = " + s.getEffectivePriority());
+                ThreadWrapper w = threadStates.get(s);
+                queue.remove(w);
+                queue.add(w);
+            }
         }
 
         /**
@@ -223,7 +233,6 @@ public class PriorityScheduler extends Scheduler {
             public ThreadWrapper(ThreadState s) {
                 state = s;
                 timeInserted = Machine.timer().getTime();
-                //System.out.println("timeInserted = " + timeInserted);
             }
 
             public int compareTo(Object o) {
@@ -254,7 +263,6 @@ public class PriorityScheduler extends Scheduler {
         public ThreadState(KThread thread) {
             this.thread = thread;
             setPriority(priorityDefault);
-            setEffectivePriority(priorityDefault);
         }
 
         /**
@@ -272,11 +280,19 @@ public class PriorityScheduler extends Scheduler {
          * @return	the effective priority of the associated thread.
          */
         public int getEffectivePriority() {
-            return eff_priority;
+            return effectivePriority.getEffectivePriority();
         }
 
-        public void setEffectivePriority(int priority) {
-            this.eff_priority = priority;
+        public void donatePriority(PriorityQueue q, int donation) {
+            effectivePriority.donate(q, donation);
+            notifyParents();
+            Lib.debug('P', "Donated to: " + thread + " with donation " + donation);
+        }
+
+        public void retractDonatedPriority(PriorityQueue q) {
+            effectivePriority.retract(q);
+            notifyParents();
+            Lib.debug('P', "Retract donation: " + thread + ", now priority = " + getPriority() + ", effective priority = " + getEffectivePriority());
         }
 
         /**
@@ -289,7 +305,14 @@ public class PriorityScheduler extends Scheduler {
                 return;
 
             this.priority = priority;
-            eff_priority = (eff_priority > priority) ? eff_priority : priority;
+            effectivePriority.setPriority(priority);
+            notifyParents();
+        }
+
+        public void notifyParents() {
+            for(PriorityQueue q : parents) {
+                q.updateThreadState(this);
+            }
         }
 
         /**
@@ -305,6 +328,7 @@ public class PriorityScheduler extends Scheduler {
          * @see	nachos.threads.ThreadQueue#waitForAccess
          */
         public void waitForAccess(PriorityQueue waitQueue) {
+            parents.add(waitQueue);
         }
 
         /**
@@ -318,11 +342,52 @@ public class PriorityScheduler extends Scheduler {
          * @see	nachos.threads.ThreadQueue#nextThread
          */
         public void acquire(PriorityQueue waitQueue) {
+            if(parents.remove(waitQueue)) {
+                effectivePriority.retract(waitQueue);
+            }
         }
 
         /** The thread with which this object is associated. */
         protected KThread thread;
         /** The priority of the associated thread. */
-        protected int priority, eff_priority;
+        protected int priority;
+        protected EffectivePriorityDesc effectivePriority = new EffectivePriorityDesc(0);
+        protected HashSet<PriorityQueue> parents = new HashSet<PriorityQueue>();
+
+        protected class EffectivePriorityDesc {
+            EffectivePriorityDesc(int priority) {
+                this.priority = priority;
+                this.max_donation = 0;
+            }
+
+            void setPriority(int priority) {
+                this.priority = priority;
+            }
+
+            int getEffectivePriority() {
+                return Math.max(priority, max_donation);
+            }
+
+            void donate(PriorityQueue q, int priority) {
+                this.donations.put(q, priority);
+                max_donation = Math.max(max_donation, priority);
+            }
+
+            void retract(PriorityQueue q) {
+                if(donations.containsKey(q)) {
+                    int p = donations.get(q);
+                    donations.remove(q);
+                    if(max_donation == p) {
+                        max_donation = 0;
+                        for(Map.Entry<PriorityQueue, Integer> e : donations.entrySet()) {
+                            max_donation = Math.max(max_donation, e.getValue());
+                        }
+                    }
+                }
+            }
+
+            private int priority, max_donation;
+            private HashMap<PriorityScheduler.PriorityQueue, Integer> donations = new HashMap<PriorityQueue, Integer>();
+        }
     }
 }
