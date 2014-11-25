@@ -23,11 +23,6 @@ public class UserProcess {
      * Allocate a new process.
      */
     public UserProcess() {
-        int numPhysPages = Machine.processor().getNumPhysPages();
-        pageTable = new TranslationEntry[numPhysPages];
-        for (int i=0; i<numPhysPages; i++)
-            pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
-
         if(rootProcess == null) {
             rootProcess = this;
         }
@@ -73,7 +68,7 @@ public class UserProcess {
      * <tt>UThread.restoreState()</tt>.
      */
     public void restoreState() {
-        Machine.processor().setPageTable(pageTable);
+        Machine.processor().setPageTable(ptdriver.getPageTable());
     }
 
     /**
@@ -137,7 +132,7 @@ public class UserProcess {
 
         byte[] memory = Machine.processor().getMemory();
 
-        // for now, just assume that virtual addresses equal physical addresses
+        vaddr = ptdriver.translate(vaddr);
         if (vaddr < 0 || vaddr >= memory.length)
             return 0;
 
@@ -180,7 +175,7 @@ public class UserProcess {
 
         byte[] memory = Machine.processor().getMemory();
 
-        // for now, just assume that virtual addresses equal physical addresses
+        vaddr = ptdriver.translate(vaddr);
         if (vaddr < 0 || vaddr >= memory.length)
             return 0;
 
@@ -202,6 +197,7 @@ public class UserProcess {
      */
     private boolean load(String name, String[] args) {
         Lib.debug(dbgProcess, "UserProcess.load(\"" + name + "\")");
+        ptdriver = new PageTableDriver(this);
 
         OpenFile executable = ThreadedKernel.fileSystem.open(name, false);
         if (executable == null) {
@@ -253,12 +249,19 @@ public class UserProcess {
         // and finally reserve 1 page for arguments
         numPages++;
 
-        if (!loadSections())
+        if (!loadSections()) {
+            ptdriver.destroy();
             return false;
+        }
 
+        // Stack
+        for(int i = 0; i < stackPages; i++)
+            ptdriver.alloc(false);
+        
         // store arguments in last page
-        int entryOffset = (numPages-1)*pageSize;
-        int stringOffset = entryOffset + args.length*4;
+        int vpn = ptdriver.alloc(false);
+        int entryOffset = vpn * pageSize;
+        int stringOffset = entryOffset + args.length * 4;
 
         this.argc = args.length;
         this.argv = entryOffset;
@@ -285,12 +288,6 @@ public class UserProcess {
      * @return	<tt>true</tt> if the sections were successfully loaded.
      */
     protected boolean loadSections() {
-        if (numPages > Machine.processor().getNumPhysPages()) {
-            coff.close();
-            Lib.debug(dbgProcess, "\tinsufficient physical memory");
-            return false;
-        }
-
         // load sections
         for (int s=0; s<coff.getNumSections(); s++) {
             CoffSection section = coff.getSection(s);
@@ -299,13 +296,15 @@ public class UserProcess {
                       + " section (" + section.getLength() + " pages)");
 
             for (int i=0; i<section.getLength(); i++) {
-                int vpn = section.getFirstVPN()+i;
-
-                // for now, just assume virtual addresses=physical addresses
-                section.loadPage(i, vpn);
+                int vpn = ptdriver.alloc(section.isReadOnly());
+                if(vpn == -1) {
+                    coff.close();
+                    Lib.debug(dbgProcess, "\tinsufficient physical memory");
+                    return false;
+                }
+                section.loadPage(i, ptdriver.find(vpn));
             }
         }
-
         return true;
     }
 
@@ -346,6 +345,14 @@ public class UserProcess {
             Machine.halt();
 
         Lib.assertNotReached("Machine.halt() did not halt machine!");
+        return 0;
+    }
+
+    private int handleExit(int code) {
+        System.out.println("\nProgram exiting with status " + code + "...");
+        fsdriver.destroy();
+        ptdriver.destroy();
+        UThread.finish();
         return 0;
     }
 
@@ -430,9 +437,13 @@ public class UserProcess {
             if(s1 == null)
                 return -1;
             return fsdriver.unlink(s1);
+        case syscallExit:
+            return handleExit(a0);
+
 
         default:
             Lib.debug(dbgProcess, "Unknown syscall " + syscall);
+            handleExit(-255);
             Lib.assertNotReached("Unknown system call!");
         }
         return 0;
@@ -464,6 +475,7 @@ public class UserProcess {
         default:
             Lib.debug(dbgProcess, "Unexpected exception: " +
                       Processor.exceptionNames[cause]);
+            handleExit(-255);
             Lib.assertNotReached("Unexpected exception");
         }
     }
@@ -471,8 +483,6 @@ public class UserProcess {
     /** The program being run by this process. */
     protected Coff coff;
 
-    /** This process's page table. */
-    protected TranslationEntry[] pageTable;
     /** The number of contiguous pages occupied by the program. */
     protected int numPages;
 
@@ -483,6 +493,7 @@ public class UserProcess {
     private int argc, argv;
 
     private FileSystemDriver fsdriver = new FileSystemDriver();
+    private PageTableDriver ptdriver;
 
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';

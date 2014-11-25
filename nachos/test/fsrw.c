@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 	read(fd2, buf, 10);
 	write(1, buf, 10);
 	close(fd2);
-	halt();
+	return 0;
 }
 
 

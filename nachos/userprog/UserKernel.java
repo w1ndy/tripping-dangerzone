@@ -23,6 +23,7 @@ public class UserKernel extends ThreadedKernel {
         super.initialize(args);
 
         console = new SynchConsole(Machine.console());
+        memdrv = new MemoryDriver();
 
         Machine.processor().setExceptionHandler(new Runnable() {
             public void run() {
@@ -110,6 +111,7 @@ public class UserKernel extends ThreadedKernel {
 
     /** Globally accessible reference to the synchronized console. */
     public static SynchConsole console;
+    public static MemoryDriver memdrv;
 
     // dummy variables to make javac smarter
     private static Coff dummy1 = null;

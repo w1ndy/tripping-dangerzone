@@ -60,6 +60,12 @@ public class FileSystemDriver
 		return -1;
 	}
 
+	public void destroy() {
+		for(Map.Entry<Integer, OpenFile> e : descriptor_to_handler.entrySet())
+			e.getValue().close();
+		descriptor_to_handler.clear();
+	}
+
 	private HashMap<Integer, OpenFile> descriptor_to_handler = new HashMap<Integer, OpenFile>();
 	private int fd_next = 2;
 }
