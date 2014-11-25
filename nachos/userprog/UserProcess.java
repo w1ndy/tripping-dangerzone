@@ -27,6 +27,10 @@ public class UserProcess {
         pageTable = new TranslationEntry[numPhysPages];
         for (int i=0; i<numPhysPages; i++)
             pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
+
+        if(rootProcess == null) {
+            rootProcess = this;
+        }
     }
 
     /**
@@ -338,8 +342,8 @@ public class UserProcess {
      * Handle the halt() system call.
      */
     private int handleHalt() {
-
-        Machine.halt();
+        if(this == rootProcess)
+            Machine.halt();
 
         Lib.assertNotReached("Machine.halt() did not halt machine!");
         return 0;
@@ -482,4 +486,5 @@ public class UserProcess {
 
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';
+    private static UserProcess rootProcess = null;
 }
