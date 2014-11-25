@@ -23,7 +23,7 @@ threads =	ThreadedKernel KThread Alarm \
 		Condition2 Communicator Rider ElevatorController \
 		PriorityScheduler LotteryScheduler Boat
 
-userprog =	UserKernel UThread UserProcess SynchConsole
+userprog =	UserKernel UThread UserProcess SynchConsole FileSystemDriver
 
 vm =		VMKernel VMProcess
 

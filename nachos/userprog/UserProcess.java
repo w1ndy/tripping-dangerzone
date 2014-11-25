@@ -387,10 +387,45 @@ public class UserProcess {
      * @return	the value to be returned to the user.
      */
     public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
+        String s1;
+        byte[] buf;
+        int ret;
+
         switch (syscall) {
         case syscallHalt:
             return handleHalt();
-
+        case syscallCreate:
+            s1 = readVirtualMemoryString(a0, 256);
+            if(s1 == null)
+                return -1;
+            return fsdriver.creat(s1);
+        case syscallOpen:
+            s1 = readVirtualMemoryString(a0, 256);
+            if(s1 == null)
+                return -1;
+            return fsdriver.open(s1);
+        case syscallRead:
+            if(a2 > pageSize)
+                return -1;
+            buf = new byte[a2];
+            ret = fsdriver.read(a0, buf);
+            if(ret == -1)
+                return ret;
+            writeVirtualMemory(a1, buf, 0, ret);
+            return ret;
+        case syscallWrite:
+            if(a2 > pageSize)
+                return -1;
+            buf = new byte[a2];
+            readVirtualMemory(a1, buf, 0, a2);
+            return fsdriver.write(a0, buf);
+        case syscallClose:
+            return fsdriver.close(a0);
+        case syscallUnlink:
+            s1 = readVirtualMemoryString(a0, 256);
+            if(s1 == null)
+                return -1;
+            return fsdriver.unlink(s1);
 
         default:
             Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -442,6 +477,8 @@ public class UserProcess {
 
     private int initialPC, initialSP;
     private int argc, argv;
+
+    private FileSystemDriver fsdriver = new FileSystemDriver();
 
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';
