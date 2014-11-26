@@ -65,7 +65,7 @@ public class Alarm {
         KThread.sleep();
     }
 
-    public static class BlockedThread implements Comparable {
+    public class BlockedThread implements Comparable {
         public KThread t;
         public long x;
 

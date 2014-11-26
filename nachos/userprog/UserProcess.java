@@ -5,6 +5,7 @@ import nachos.threads.*;
 import nachos.userprog.*;
 
 import java.io.EOFException;
+import java.util.*;
 
 /**
  * Encapsulates the state of a user process that is not contained in its
@@ -23,9 +24,9 @@ public class UserProcess {
      * Allocate a new process.
      */
     public UserProcess() {
-        if(rootProcess == null) {
-            rootProcess = this;
-        }
+        exitcode = -255;
+        pid = next_pid++;
+        pids.put(pid, null);
     }
 
     /**
@@ -51,7 +52,10 @@ public class UserProcess {
         if (!load(name, args))
             return false;
 
-        new UThread(this).setName(name).fork();
+        running_process++;
+        UThread t = new UThread(this);
+        pids.put(pid, t);
+        t.setName(name).fork();
 
         return true;
     }
@@ -341,19 +345,61 @@ public class UserProcess {
      * Handle the halt() system call.
      */
     private int handleHalt() {
-        if(this == rootProcess)
+        if(this.pid == 0)
             Machine.halt();
 
-        Lib.assertNotReached("Machine.halt() did not halt machine!");
         return 0;
     }
 
+    private int handleJoin(UThread t) {
+        UserProcess p = t.process;
+        if(p.parent == this) {
+            t.join();
+            if(t.process.exitcode == -255)
+                return 0;
+            return 1;
+        }
+        return -1;
+    }
+
     private int handleExit(int code) {
-        System.out.println("\nProgram exiting with status " + code + "...");
         fsdriver.destroy();
         ptdriver.destroy();
+        this.exitcode = code;
+        running_process--;
+        if(running_process == 0)
+            Kernel.kernel.terminate();
         UThread.finish();
         return 0;
+    }
+
+    private String[] readVirtualMemoryStringArray(int vaddr, int count) {
+        byte[] ptr = new byte[4];
+        String[] ret = new String[count];
+        int iptr;
+        for(int i = 0; i < count; i++) {
+            readVirtualMemory(vaddr, ptr);
+            iptr = ((int)ptr[3] << 24) + ((int)ptr[2] << 16) + ((int)ptr[1] << 8) + ptr[0];
+            Lib.debug(dbgProcess, "\tread string @ " + ptr[0] + ptr[1] + ptr[2] + ptr[3]);
+            ret[i] = readVirtualMemoryString(iptr, 256);
+            if(ret[i] == null)
+                return null;
+            Lib.debug(dbgProcess, "\tfetched: " + ret[i]);
+            vaddr += 4;
+        }
+        return ret;
+    }
+
+    private int handleExec(String prog, String[] args) {
+        UserProcess p = UserProcess.newUserProcess();
+        p.parent = this;
+        child.add(p);
+        if(!p.execute(prog, (args == null) ? (new String[] {}) : args)) {
+            System.out.println("Executable " + prog + " cannot be loaded.");
+            child.remove(p);
+            return -1;
+        }
+        return p.pid;
     }
 
 
@@ -399,8 +445,10 @@ public class UserProcess {
      */
     public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
         String s1;
+        String[] args;
         byte[] buf;
-        int ret;
+        int ret, m;
+        UThread t;
 
         switch (syscall) {
         case syscallHalt:
@@ -437,6 +485,28 @@ public class UserProcess {
             if(s1 == null)
                 return -1;
             return fsdriver.unlink(s1);
+        case syscallExec:
+            s1 = readVirtualMemoryString(a0, 256);
+            args = readVirtualMemoryStringArray(a2, a1);
+            if(s1 == null) return -1;
+            return handleExec(s1, args);
+        case syscallJoin:
+            if(pids.containsKey(a0)) {
+                t = pids.get(a0);
+                if(t == null) return -1;
+                m = handleJoin(t);
+                if(m != -1 && a1 > 0) {
+                    ret = t.process.exitcode;
+                    writeVirtualMemory(a1, new byte[] {
+                        (byte)(ret & 0xff),
+                        (byte)((ret >> 8) & 0xff),
+                        (byte)((ret >> 16) & 0xff),
+                        (byte)((ret >> 24) & 0xff)
+                    });
+                }
+                return m;
+            }
+            return -1;
         case syscallExit:
             return handleExit(a0);
 
@@ -495,7 +565,12 @@ public class UserProcess {
     private FileSystemDriver fsdriver = new FileSystemDriver();
     private PageTableDriver ptdriver;
 
+    public int pid, exitcode;
+    public UserProcess parent = null;
+    private LinkedList<UserProcess> child = new LinkedList<UserProcess>();
+    private static HashMap<Integer, UThread> pids = new HashMap<Integer, UThread>();
+    private static int next_pid = 0, running_process = 0;
+
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';
-    private static UserProcess rootProcess = null;
 }

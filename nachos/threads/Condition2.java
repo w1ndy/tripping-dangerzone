@@ -73,7 +73,8 @@ public class Condition2 {
     }
     
     public void acquireDonation(KThread t) {
-        waitQueue.acquire(t);
+        if(ThreadedKernel.scheduler instanceof PriorityScheduler)
+            waitQueue.acquire(t);
     }
 
     public int getThreadCount() {

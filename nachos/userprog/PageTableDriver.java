@@ -14,7 +14,6 @@ public class PageTableDriver {
 		for(int i = 0; i < numPhysPages; i++) {
 			entries[i] = new TranslationEntry(i, i, false, false, false, false);
 		}
-		System.out.println("done");
 	}
 
 	public void map(int vadr, int padr) {
