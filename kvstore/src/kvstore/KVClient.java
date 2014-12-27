@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import java.net.InetAddress;
+
 /**
  * Client API used to issue requests to key-value server.
  */
@@ -40,8 +42,17 @@ public class KVClient implements KeyValueInterface {
      * @throws KVException if unable to create or connect socket
      */
     public Socket connectHost() throws KVException {
-        // implement me
-        return null;
+        Socket ret;
+
+        try {
+            ret = new Socket(InetAddress.getByName(server), port);
+        } catch (IOException e) {
+            throw new KVException(ERROR_COULD_NOT_CONNECT);
+        } catch (Exception e) {
+            throw new KVException(ERROR_COULD_NOT_CREATE_SOCKET);
+        }
+
+        return ret;
     }
 
     /**
@@ -51,7 +62,9 @@ public class KVClient implements KeyValueInterface {
      * @param  sock Socket to be closed
      */
     public void closeHost(Socket sock) {
-        // implement me
+        try {
+            sock.close();
+        } catch (Exception e) {}
     }
 
     /**
@@ -62,7 +75,14 @@ public class KVClient implements KeyValueInterface {
      */
     @Override
     public void put(String key, String value) throws KVException {
-        // implement me
+        Socket s = connectHost();
+        KVMessage msg = new KVMessage(PUT_REQ);
+        msg.setKey(key);
+        msg.setValue(value);
+        msg.sendMessage(s);
+        msg = new KVMessage(s);
+        if(msg.getMessage() != SUCCESS)
+            throw new KVException(msg.getMessage());
     }
 
     /**
@@ -74,8 +94,14 @@ public class KVClient implements KeyValueInterface {
      */
     @Override
     public String get(String key) throws KVException {
-        // implement me
-        return null;
+        Socket s = connectHost();
+        KVMessage msg = new KVMessage(GET_REQ);
+        msg.setKey(key);
+        msg.sendMessage(s);
+        msg = new KVMessage(s);
+        if(msg.getKey() != key)
+            throw new KVException(msg.getMessage());
+        return msg.getValue();
     }
 
     /**
@@ -86,7 +112,13 @@ public class KVClient implements KeyValueInterface {
      */
     @Override
     public void del(String key) throws KVException {
-        // implement me
+        Socket s = connectHost();
+        KVMessage msg = new KVMessage(DEL_REQ);
+        msg.setKey(key);
+        msg.sendMessage(s);
+        msg = new KVMessage(s);
+        if(msg.getMessage() != SUCCESS)
+            throw new KVException(msg.getMessage());
     }
 
 
