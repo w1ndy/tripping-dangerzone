@@ -99,7 +99,7 @@ public class KVClient implements KeyValueInterface {
         msg.setKey(key);
         msg.sendMessage(s);
         msg = new KVMessage(s);
-        if(msg.getKey() != key)
+        if(msg.getKey() == null || msg.getKey() != key)
             throw new KVException(msg.getMessage());
         return msg.getValue();
     }

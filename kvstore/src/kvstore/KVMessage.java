@@ -79,7 +79,18 @@ public class KVMessage implements Serializable {
      *         KVConstants.java for possible KVException messages.
      */
     public KVMessage(Socket sock, int timeout) throws KVException {
-        // implement me
+        try {
+            InputStream is = sock.getInputStream();
+            KVMessageType type = unmarshal(is);
+            msgType = type.getType();
+            key = type.getKey();
+            value = type.getValue();
+            message = type.getMessage();
+        } catch(JAXBException e) {
+            throw new KVException(KVConstants.ERROR_PARSER);
+        } catch(IOException e) {
+            throw new KVException(KVConstants.ERROR_COULD_NOT_RECEIVE_DATA);
+        }
     }
 
     /**
@@ -88,7 +99,10 @@ public class KVMessage implements Serializable {
      * @param kvm KVMessage with fields to copy
      */
     public KVMessage(KVMessage kvm) {
-        // implement me
+        msgType = kvm.msgType;
+        key = kvm.key;
+        value = kvm.value;
+        message = kvm.message;
     }
 
     
@@ -102,7 +116,20 @@ public class KVMessage implements Serializable {
     private JAXBElement<KVMessageType> getXMLRoot() throws JAXBException, KVException {
         ObjectFactory factory = new ObjectFactory();
         KVMessageType xmlStore = factory.createKVMessageType();
-        //implement me
+        xmlStore.setType(msgType);
+        if(msgType.equals(KVConstants.PUT_REQ)) {
+            xmlStore.setKey(key);
+            xmlStore.setValue(value);
+        } else if(msgType.equals(KVConstants.RESP)) {
+            if(message == null) {
+                xmlStore.setKey(key);
+                xmlStore.setValue(value);
+            } else {
+                xmlStore.setMessage(message);
+            }
+        } else {
+            xmlStore.setKey(key);
+        }
         return factory.createKVMessage(xmlStore);
     }
 
@@ -168,7 +195,27 @@ public class KVMessage implements Serializable {
      *         ERROR_COULD_NOT_SEND_DATA
      */
     public void sendMessage(Socket sock) throws KVException {
-        // implement me
+        if(msgType == null) {
+            throw new KVException(KVConstants.ERROR_INVALID_FORMAT);
+        } else if(msgType.equals(KVConstants.PUT_REQ)) {
+            if(key == null || value == null)
+                throw new KVException(KVConstants.ERROR_INVALID_FORMAT);
+        } else if(msgType.equals(KVConstants.RESP)) {
+            if(!((message != null) || (key != null && value != null)))
+                throw new KVException(KVConstants.ERROR_INVALID_FORMAT);
+        } else {
+            if(key == null)
+                throw new KVException(KVConstants.ERROR_INVALID_FORMAT);
+        }
+
+        try {
+            marshalTo(sock.getOutputStream());
+            sock.shutdownOutput();
+        } catch(JAXBException e) {
+            throw new KVException(KVConstants.ERROR_PARSER);
+        } catch(IOException e) {
+            throw new KVException(KVConstants.ERROR_COULD_NOT_SEND_DATA);
+        }
     }
 
     public String getKey() {
