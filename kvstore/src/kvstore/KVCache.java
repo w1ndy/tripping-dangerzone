@@ -23,6 +23,11 @@ import kvstore.xml.ObjectFactory;
  */
 public class KVCache implements KeyValueInterface {
 
+    protected KVCacheType sets;
+    protected ReentrantLock[] setLocks;
+
+    protected int numSets, maxElemsPerSet;
+
     /**
      * Constructs a second-chance-replacement cache.
      *
@@ -31,7 +36,17 @@ public class KVCache implements KeyValueInterface {
      */
     @SuppressWarnings("unchecked")
     public KVCache(int numSets, int maxElemsPerSet) {
-        // implement me
+        this.numSets = numSets;
+        this.maxElemsPerSet = maxElemsPerSet;
+
+        sets = new KVCacheType();
+        setLocks = new ReentrantLock[numSets];
+        for(int i = 0; i < numSets; i++) {
+            setLocks[i] = new ReentrantLock();
+            KVSetType set = new KVSetType();
+            set.setId((new Integer(i)).toString());
+            sets.getSet().add(set);
+        }
     }
 
     /**
@@ -45,7 +60,13 @@ public class KVCache implements KeyValueInterface {
      */
     @Override
     public String get(String key) {
-        // implement me
+        int id = (key.hashCode() & 0x7fffffff) % numSets;
+        for(KVCacheEntry entry : sets.getSet().get(id).getCacheEntry()) {
+            if(entry.getKey().equals(key)) {
+                entry.setIsReferenced("true");
+                return entry.getValue();
+            }
+        }
         return null;
     }
 
@@ -67,7 +88,28 @@ public class KVCache implements KeyValueInterface {
      */
     @Override
     public void put(String key, String value) {
-        // implement me
+        int id = (key.hashCode() & 0x7fffffff) % numSets;
+        KVCacheEntry firstUnref = null;
+        for(KVCacheEntry entry : sets.getSet().get(id).getCacheEntry()) {
+            if(entry.getKey().equals(key)) {
+                entry.setValue(value);
+                return ;
+            } else if(firstUnref == null && !entry.getIsReferenced().equals("true")) {
+                firstUnref = entry;
+            }
+        }
+
+        KVCacheEntry newEntry = new KVCacheEntry();
+        newEntry.setKey(key);
+        newEntry.setValue(value);
+        newEntry.setIsReferenced("false");
+        if(sets.getSet().get(id).getCacheEntry().size() >= maxElemsPerSet) {
+            if(firstUnref == null)
+                sets.getSet().get(id).getCacheEntry().remove(0);
+            else
+                sets.getSet().get(id).getCacheEntry().remove(firstUnref);
+        }
+        sets.getSet().get(id).getCacheEntry().add(newEntry);
     }
 
     /**
@@ -79,7 +121,14 @@ public class KVCache implements KeyValueInterface {
      */
     @Override
     public void del(String key) {
-        // implement me
+        int id = (key.hashCode() & 0x7fffffff) % numSets;
+        for(KVCacheEntry entry : sets.getSet().get(id).getCacheEntry()) {
+            if(entry.getKey().equals(key)) {
+                sets.getSet().get(id).getCacheEntry().remove(entry);
+                //entry.setIsReferenced("false");
+                return ;
+            }
+        }
     }
 
     /**
@@ -92,9 +141,7 @@ public class KVCache implements KeyValueInterface {
      */
 
     public Lock getLock(String key) {
-    	return null;
-    	//implement me
-
+    	return setLocks[(key.hashCode() & 0x7fffffff) % numSets];
     }
     
     /**
@@ -103,8 +150,7 @@ public class KVCache implements KeyValueInterface {
      * @return Size of the cache set.
      */
     int getCacheSetSize(int cacheSet) {
-        // implement me
-        return -1;
+        return sets.getSet().get(cacheSet).getCacheEntry().size();
     }
 
     private void marshalTo(OutputStream os) throws JAXBException {
@@ -119,7 +165,18 @@ public class KVCache implements KeyValueInterface {
     private JAXBElement<KVCacheType> getXMLRoot() throws JAXBException {
         ObjectFactory factory = new ObjectFactory();
         KVCacheType xmlCache = factory.createKVCacheType();
-            // implement me
+        for(KVSetType set : sets.getSet()) {
+            KVSetType xmlSet = factory.createKVSetType();
+            xmlSet.setId(set.getId());
+            for(KVCacheEntry entry : set.getCacheEntry()) {
+                KVCacheEntry xmlEntry = factory.createKVCacheEntry();
+                xmlEntry.setKey(entry.getKey());
+                xmlEntry.setValue(entry.getValue());
+                xmlEntry.setIsReferenced(entry.getIsReferenced());
+                xmlSet.getCacheEntry().add(xmlEntry);
+            }
+            xmlCache.getSet().add(xmlSet);
+        }
         return factory.createKVCache(xmlCache);
     }
 
@@ -127,7 +184,6 @@ public class KVCache implements KeyValueInterface {
      * Serialize this store to XML. See spec for details on output format.
      */
     public String toXML() {
-        // implement me
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         try {
             marshalTo(os);

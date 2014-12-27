@@ -5,6 +5,7 @@ import static kvstore.KVConstants.ERROR_NO_SUCH_KEY;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.OutputStream;
+import java.io.FileOutputStream;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -134,7 +135,11 @@ public class KVStore implements KeyValueInterface {
      * @param fileName the file to write the serialized store
      */
     public void dumpToFile(String fileName) {
-        // implement me
+        try {
+            File f = new File(fileName);
+            FileOutputStream os = new FileOutputStream(f);
+            marshalTo(os);
+        } catch (Exception e) {}
     }
 
     /**
@@ -147,7 +152,10 @@ public class KVStore implements KeyValueInterface {
      */
     public void restoreFromFile(String fileName) {
         resetStore();
-
-        // implement me
+        try {
+            KVStoreType kvst = unmarshal(new File(fileName));
+            for(KVPairType pair : kvst.getKVPair())
+                put(pair.getKey(), pair.getValue());
+        } catch (Exception e) {}
     }
 }
