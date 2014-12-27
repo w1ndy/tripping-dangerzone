@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+    <xsd:element name="KVStore" type="KVStoreType"/>
+
+    <xsd:complexType name="KVStoreType">
+        <xsd:sequence>
+            <xsd:element name="KVPair" type="KVPairType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="KVPairType">
+        <xsd:sequence>
+            <xsd:element name="Key" type="xsd:string"/>
+            <xsd:element name="Value" type="xsd:string"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:element name="KVMessage" type="KVMessageType" />
+    
+    <xsd:complexType name="KVMessageType">
+        <xsd:sequence>
+            <xsd:element name="Key" type="xsd:string" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="Value" type="xsd:string" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="Message" type="xsd:string" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="type" type="xsd:string" use="required" />
+    </xsd:complexType>
+
+   <xsd:element name="KVCache" type="KVCacheType"/>
+
+    <xsd:complexType name="KVCacheType">
+        <xsd:sequence>
+            <xsd:element name="Set" type="KVSetType" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="KVSetType">
+        <xsd:sequence>
+            <xsd:element name="CacheEntry" type="KVCacheEntry" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="Id" type="xsd:string" />
+    </xsd:complexType>
+
+    <xsd:complexType name="KVCacheEntry">
+        <xsd:sequence>
+            <xsd:element name="Key" type="xsd:string" />
+            <xsd:element name="Value" type="xsd:string" />
+        </xsd:sequence>
+        <xsd:attribute name="isReferenced" type="xsd:string" />
+    </xsd:complexType>
+
+
+</xsd:schema>

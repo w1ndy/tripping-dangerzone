@@ -1,0 +1,3 @@
+<KVMessage type="delreq">
+<Key>key</Key>
+</KVMessage>

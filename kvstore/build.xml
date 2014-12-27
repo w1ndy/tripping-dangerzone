@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="kvstore" default="cleancompile">
+    <property name="src" location="src"/>
+    <property name="testd" location="test"/>
+    <property name="build" location="bin"/>
+    <property name="depcache" location="${build}/depcache"/>
+    <property name="lib" location="lib"/>
+    <property name="dist" location="dist"/>
+    <property name="jarfile" location="${dist}/${ant.project.name}.jar"/>
+    <property name="compile.debug" value="true"/>
+    <property name="test.reports" location="testreport"/>
+    <property name="sourceversion" value="1.7"/>
+
+    <path id="classpath.base">
+        <pathelement location="${build}"/>
+        <fileset dir="${lib}" includes="**/*.jar"/>
+    </path>
+
+    <path id="classpath.test">
+        <path refid="classpath.base"/>
+        <pathelement location="${build}"/>
+        <pathelement location="resources/example-msgs"/>
+    </path>
+
+    <macrodef name="Compile">
+        <attribute name="srcdir"/>
+        <attribute name="destdir"/>
+        <element name="compileoptions" implicit="true" optional="true"/>
+        <sequential>
+            <mkdir dir="@{destdir}"/>
+            <!-- avoids needing ant clean when changing interfaces -->
+            <depend srcdir="${srcdir}" destdir="${destdir}" cache="${depcache}"/>
+            <javac srcdir="@{srcdir}" destdir="@{destdir}" includeAntRuntime="no"
+                    encoding="UTF-8" debug="${compile.debug}" source="${sourceversion}">
+                <compilerarg value="-Xlint:unchecked" />
+                <!--<compilerarg value="-Xlint:deprecation" />-->
+                <compileoptions/>
+            </javac>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="RunJunit">
+        <attribute name="haltonfailure" default="yes" />
+        <attribute name="showoutput" default="yes" />
+        <attribute name="outputtoformatters" default="false" />
+        <element name="testspecification" implicit="yes" />
+        <sequential>
+            <junit printsummary="off" fork="yes" timeout="600000"
+                haltonfailure="@{haltonfailure}" maxmemory="128M"
+                failureproperty="junit.failed" showoutput="@{showoutput}"
+                outputtoformatters="@{outputtoformatters}">
+                <classpath refid="classpath.test"/>
+                <formatter type="plain" usefile="false"/>
+                <assertions><enable/></assertions>
+                <testspecification/>
+                <jvmarg value="-XX:-UseSplitVerifier"/>
+            </junit>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="RunClass">
+        <attribute name="classsrc"/>
+        <attribute name="srcdir" default="${build}"/>
+        <sequential>
+        <java
+           classname="@{classsrc}"
+           dir="@{srcdir}"
+           fork="true"
+           failonerror="true"
+           maxmemory="128m"
+           >
+           <arg line="${server}"/>
+         <classpath refid="classpath.base"/>
+         </java>
+     </sequential>
+    </macrodef>
+
+    <target name="compile" description="Compile code">
+        <Compile srcdir="${src}" destdir="${build}">
+            <classpath refid="classpath.base"/>
+        </Compile>
+	<copy todir="${build}" flatten="true">
+		<fileset dir="${src}">
+			<include name="bin/*.sh"/>
+		</fileset>
+	</copy>
+    </target>
+
+    <target name="cleancompile" depends="clean,compile,compile-tests"
+            description="Clean and compile code">
+    </target>
+
+    <target name="clean" description="Remove build and dist directories">
+        <delete dir="${build}"/>
+        <delete dir="${dist}"/>
+        <delete dir="${test.reports}"/>
+    </target>
+
+    <target name="compile-tests" depends="compile"
+            description="Compile all unit tests">
+        <Compile srcdir="${testd}" destdir="${build}">
+            <classpath refid="classpath.test"/>
+        </Compile>
+        <Compile srcdir="${testd}" destdir="${build}">
+            <classpath refid="classpath.test"/>
+        </Compile>
+    </target>
+
+    <target name="test" depends="clean,compile-tests"
+            description="Run all unit tests">
+        <RunJunit>
+            <batchtest>
+                <fileset dir="${build}">
+                    <include name="**/*Test.class"/>
+                    <exclude name="**/*$*.class"/>
+                </fileset>
+            </batchtest>
+        </RunJunit>
+    </target>
+
+    <target name="runtest" depends="clean,compile-tests"
+            description="Runs the test you specify on the command line with -Dtest=">
+        <fail unless="test" message="You must run this target with -Dtest=TestName"/>
+        <available property="test.exists" classname="kvstore.${test}">
+                <classpath refid="classpath.test" />
+        </available>
+        <fail unless="test.exists" message="Test ${test} could not be found"/>
+
+        <RunJunit>
+            <test name="kvstore.${test}"/>
+        </RunJunit>
+    </target>
+
+    <target name="runserver" depends="compile">
+        <RunClass classsrc="kvstore.SampleServer"/>
+    </target>
+
+    <target name="runclient" depends="compile">
+        <RunClass classsrc="kvstore.SampleClient"/>
+    </target>
+
+    <target name="runmaster" depends="compile">
+        <RunClass classsrc="kvstore.SampleMaster"/>
+    </target>
+
+    <target name="runslave" depends="compile">
+        <RunClass classsrc="kvstore.SampleSlave"/>
+    </target>
+
+    <target name="runag" depends="cleancompile">
+        <fail unless="proj" message="You must run this target with -Dproj=projname"/>
+        <java classname="autograder.TestUtils"
+              dir="${build}"
+              fork="true"
+              failonerror="true"
+              maxmemory="128m">
+            <arg line="${proj}"/>
+            <classpath refid="classpath.test"/>
+        </java>
+    </target>
+
+    <target name="grade" depends="compile-tests"
+            description="Generates HTML test reports in ${test.reports}">
+        <mkdir dir="${test.reports}"/>
+        <RunJunit haltonfailure="no" showoutput="no">
+            <formatter type="xml"/>
+            <formatter type="plain" usefile="true"/>
+            <batchtest todir="${test.reports}" >
+                <fileset dir="${build}">
+                    <include name="**/*Test.class"/>
+                    <exclude name="**/*$*.class"/>
+                </fileset>
+            </batchtest>
+        </RunJunit>
+
+        <junitreport todir="${test.reports}">
+            <fileset dir="${test.reports}">
+                <include name="TEST-*.xml" />
+            </fileset>
+            <report todir="${test.reports}" />
+        </junitreport>
+
+        <!-- Fail here if the junit tests failed. -->
+        <fail if="junit.failed" message="Some JUnit tests failed"/>
+    </target>
+
+    <target name="handin" depends="clean"
+        description="Create a tarball of your code to hand in">
+        <tar destfile="cs162-proj4.tar.gz" compression="gzip" basedir="." />
+        <echo message="Tarball created! Please submit 'cs162-proj4.tar.gz' as proj4-code" />
+    </target>
+
+</project>
