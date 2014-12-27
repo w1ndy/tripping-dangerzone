@@ -81,7 +81,7 @@ public class KVClient implements KeyValueInterface {
         msg.setValue(value);
         msg.sendMessage(s);
         msg = new KVMessage(s);
-        if(msg.getMessage() != SUCCESS)
+        if(!msg.getMessage().equals(SUCCESS))
             throw new KVException(msg.getMessage());
     }
 
@@ -99,7 +99,7 @@ public class KVClient implements KeyValueInterface {
         msg.setKey(key);
         msg.sendMessage(s);
         msg = new KVMessage(s);
-        if(msg.getKey() == null || msg.getKey() != key)
+        if(msg.getKey() == null || !msg.getKey().equals(key))
             throw new KVException(msg.getMessage());
         return msg.getValue();
     }
@@ -117,7 +117,7 @@ public class KVClient implements KeyValueInterface {
         msg.setKey(key);
         msg.sendMessage(s);
         msg = new KVMessage(s);
-        if(msg.getMessage() != SUCCESS)
+        if(!msg.getMessage().equals(SUCCESS))
             throw new KVException(msg.getMessage());
     }
 

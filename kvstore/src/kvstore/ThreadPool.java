@@ -1,10 +1,13 @@
 package kvstore;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ThreadPool {
 
     /* Array of threads in the threadpool */
     public Thread threads[];
+    public ConcurrentLinkedQueue<Runnable> jobs;
+    public ConcurrentLinkedQueue<WorkerThread> idle;
 
 
     /**
@@ -14,8 +17,12 @@ public class ThreadPool {
      */
     public ThreadPool(int size) {
         threads = new Thread[size];
-
-        // implement me
+        jobs = new ConcurrentLinkedQueue<Runnable>();
+        idle = new ConcurrentLinkedQueue<WorkerThread>();
+        for(int i = 0; i < size; i++) {
+            threads[i] = new WorkerThread(this);
+            threads[i].start();
+        }
     }
 
     /**
@@ -28,7 +35,9 @@ public class ThreadPool {
      *         state. Your implementation may or may not actually throw this.
      */
     public void addJob(Runnable r) throws InterruptedException {
-        // implement me
+        jobs.add(r);
+        if(!idle.isEmpty())
+            idle.poll().interrupt();
     }
 
     /**
@@ -37,9 +46,18 @@ public class ThreadPool {
      * @throws InterruptedException if thread is interrupted while in blocked
      *         state. Your implementation may or may not actually throw this.
      */
-    public Runnable getJob() throws InterruptedException {
-        // implement me
-        return null;
+    public Runnable getJob(WorkerThread t) throws InterruptedException {
+        Runnable ret;
+        ret = null;
+        while((ret = jobs.poll()) == null)
+            try {
+                idle.add(t);
+                t.sleep(60000);
+            } catch(InterruptedException e) {
+            } finally {
+                idle.remove(t);
+            }
+        return ret;
     }
 
     /**
@@ -63,7 +81,10 @@ public class ThreadPool {
          */
         @Override
         public void run() {
-            // implement me
+            while(true)
+                try {
+                    getJob(this).run();
+                } catch(Exception e) {}
         }
     }
 }

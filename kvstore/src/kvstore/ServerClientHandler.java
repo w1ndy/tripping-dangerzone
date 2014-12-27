@@ -35,7 +35,8 @@ public class ServerClientHandler implements NetworkHandler {
      * @param connections number of threads in threadPool to service requests
      */
     public ServerClientHandler(KVServer kvServer, int connections) {
-        // implement me
+        this.kvServer = kvServer;
+        threadPool = new ThreadPool(connections);
     }
 
     /**
@@ -45,10 +46,43 @@ public class ServerClientHandler implements NetworkHandler {
      * @param client Socket connected to the client with the request
      */
     @Override
-    public void handle(Socket client) {
-        // implement me
+    public void handle(final Socket client) {
+        System.out.println("Ready to handle request...");
+        try {
+            threadPool.addJob(new Runnable() {
+                @Override
+                public void run() {
+                    handleRequest(client);
+                }
+            });
+        } catch(InterruptedException e) {}
     }
     
-    // implement me
+    public void handleRequest(Socket client) {
+        System.out.println("Handling request...");
+        try {
+            KVMessage msg = new KVMessage(client);
+            if(msg.getMsgType().equals(GET_REQ)) {
+                String key = msg.getKey();
+                String value = kvServer.get(key);
+                msg = new KVMessage(RESP);
+                msg.setKey(key);
+                msg.setValue(value);
+                msg.sendMessage(client);
+            } else if(msg.getMsgType().equals(PUT_REQ)) {
+                kvServer.put(msg.getKey(), msg.getValue());
+                (new KVMessage(RESP, SUCCESS)).sendMessage(client);
+            } else if(msg.getMsgType().equals(DEL_REQ)) {
+                kvServer.del(msg.getKey());
+                (new KVMessage(RESP, SUCCESS)).sendMessage(client);
+            }
+        } catch (KVException e) {
+            System.out.println("Faulty request: " + e.toString());
+            try {
+                e.getKVMessage().sendMessage(client);
+            } catch(KVException s) {}
+        }
+        System.out.println("Request handled.");
+    }
 
 }
